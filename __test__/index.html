@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <link rel="stylesheet" href="../dist/styles/minder.css">
+</head>
+<body>
+<div id="app"></div>
+<script src="https://unpkg.com/vue@1.0.28/dist/vue.min.js"></script>
+<script src="../dist/minder.min.js"></script>
+<script>
+		new Vue({
+				el: '#app',
+				template: '<minder :import-data="import" v-ref:naotu></minder>',
+				data() {
+						return {
+								import: {
+									
+								"root": {
+									"data": {
+										"_id": "5b0e8a7ccc34c901738da672",
+										"name": "好好学习",
+										"id": "axxx",
+										"hexType": "project"
+									},
+									"children": [
+										{
+											"data": {
+												"_id" : "5b0e8a7dcc34c901738da6b9", "name" : "学习资源" ,
+												"id": "ddddbbb",
+												"hexType": "dir"
+											},
+											"children": [
+												{
+													"data": {
+														"_id": "5c0f6dc9b85cf51bf1a39c4e",
+														"name": "debug",
+														"hexType": "page",
+														"id": "bbbccc"
+													},
+													"children": []
+												}
+											]
+										}
+									]
+								}
+							},
+							'template': 'default',
+							'theme': 'fresh-blue',
+							'version': '1.4.43'		
+						};
+				},
+				ready: function() {
+						var minder = this.$refs.naotu.minder;
+						minder.on('click', function(e) {
+								console.log(e.minder.getSelectedNode());
+								console.log(e.minder.exportJson());
+						});
+				}
+		});
+</script>
+</body>
+</html>

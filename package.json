@@ -41,8 +41,11 @@
   },
   "dependencies": {
     "core-js": "^2.4.1",
+    "errno": "^0.1.7",
     "hexdo": "0.0.3",
-    "vue": "1.0.28"
+    "open": "^6.4.0",
+    "vue": "1.0.28",
+    "webpack-dev-middleware": "^3.7.0"
   },
   "devDependencies": {
     "autoprefixer-loader": "^2.0.0",
