@@ -55,3 +55,8 @@ npm install vue-stage-view
 ├── examples 预览demo源码，便于本地开发
 ├── src 核心源代码
 ```
+
+
+##问题梳理
+序号：vue遍历出现问题，先隐藏
+位移：需要时间

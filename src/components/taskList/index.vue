@@ -23,6 +23,7 @@ import VueEvent from "../model/VueEvent.js";
 import menu from "../menu";
 import addItems from "../addItems";
 export default {
+  name:'taskList',
   components: {
     menu,
     addItems

@@ -21,7 +21,7 @@
 <template>
   <!-- 标题 -->
   <div class="title">
-    <input type="text" v-model="title" @blur="save" @input="save" />
+    <input type="text" v-model="title" @input="save" />
   </div>
 </template>
 <script>
@@ -36,7 +36,7 @@ export default {
   methods: {
     save: _.debounce(function() {
       VueEvent.$emit('title-change',this.item,this.title)
-    },1000)
+    },300)
   }
 };
 </script>

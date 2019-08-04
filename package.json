@@ -21,7 +21,7 @@
     "build:style": "gulp --gulpfile build/build-style.js",
     "docs": "webpack --config build/webpack.docs.config.js ",
     "build:prod": "npm run build:style && webpack --config build/webpack.dist.prod.config.js",
-    "build": "rm -fr docs dist && npm run svgo && npm run build:prod && npm run docs",
+    "build": "npm run build:prod && npm run docs",
     "svgo": "svgo --enable=removeXMLNS  src/components/icon/icons/*.svg",
     "copy:docs": "cp -r dist/styles docs",
     "copy:example": "cp -r dist/styles examples",

@@ -8,8 +8,8 @@ module.exports = {
     output: {
         path: path.resolve(__dirname, '../dist'),
         publicPath: '/dist/',
-        filename: 'stage.min.js',
-        library: 'stage',
+        filename: 'tasklist.min.js',
+        library: 'tasklist',
         libraryTarget: 'umd',
         umdNamedDefine: true
     },
