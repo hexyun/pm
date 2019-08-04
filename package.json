@@ -1,5 +1,5 @@
 {
-  "name": "vue-stage-view",
+  "name": "hexyun-task-list",
   "version": "0.0.5",
   "title": "Vue Stage View",
   "description": "Vue Kityminder",
@@ -32,7 +32,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/hexyun/vue-stage"
+    "url": "git+https://github.com/hexyun/vue-stage.git"
   },
   "author": "jiangtao",
   "license": "MIT",
@@ -43,6 +43,7 @@
     "core-js": "^2.4.1",
     "errno": "^0.1.7",
     "hexdo": "0.0.3",
+    "iview": "^1.0.2",
     "open": "^6.4.0",
     "vue": "1.0.28",
     "webpack-dev-middleware": "^3.7.0"
@@ -82,5 +83,9 @@
     "vue-style-loader": "^1.0.0",
     "webpack": "^1.13.1",
     "webpack-dev-server": "^1.16.1"
+  },
+  "directories": {
+    "doc": "docs",
+    "example": "examples"
   }
 }
