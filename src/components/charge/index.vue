@@ -1,147 +1,234 @@
-<style scope lang='less'>
-.charge {
-  width: 35%;
-  text-align: right;
-  padding-right: 10px;
+<style scoped lang='less'>
+.task-select {
   position: relative;
+  width: 100%;
+}
+.task-select .clearFix:after {
+  display: block;
+  clear: both;
+  content: " ";
+}
+.task-select .showName {
+  width: 100%;
+  text-align: center;
+}
+.task-select .dropdown {
+  background: #fff;
+  width: 240px;
+  padding: 10px;
+  padding-top: 0;
+  border: 1px solid #b9bcc0;
+  border-radius: 4px;
   font-size: 12px;
-  .show {
-    width: 100%;
-  }
-  .select{
-    position: absolute;
-    left: 0;
-    z-index: 999;
-    background: #fff;
-    float:none;
-    border: 1px solid #aaa;
-    width:200px;
-    .ivu-select-arrow{
-      display:none;
-    }
-    .ivu-select-item{
-      text-align:left;
-      color:#aaa;
-    }
-    .name{
-      text-align:left;
-    }
-    .tel{
-      text-align:right;
-      float:right;
-    }
-  }
-  .ivu-select-selection {
-    line-height: 30px;
-    padding: 0;
-    margin: 0;
-    border: none;
-    outline: none;
-    color: 666666;
-    width:100%;
-    .ivu-select-input::placeholder{
-      color:#aaa;
-    }
-  }
-  .ivu-select-dropdown{
-    top: 100%;
-    left: 0;
-  }
-  .gray {
-    color: #9ea7b4;
-  }
+  line-height: 30px;
+  box-shadow: rgba(0, 0, 0, 0.3) 0px 2px 3px;
+  position: absolute;
+  z-index: 9;
+  top: 100%;
+  left: 0;
+}
+.task-select .dropdown .search input {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid #e5e5e5;
+  line-height: 36px;
+  outline: none;
+}
+.task-select .dropdown .searchList {
+  padding: 5px;
+}
+.task-select .dropdown .searchList input[type="checkbox"] {
+  width: 10px;
+  height: 10px;
+  display: inline-block;
+  text-align: center;
+  vertical-align: middle;
+  line-height: 10px;
+  position: relative;
+}
+.task-select .dropdown .searchList input[type="checkbox"]::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: #fff;
+  width: 100%;
+  height: 100%;
+  border: 1px solid #03a9f4;
+}
+.task-select .dropdown .searchList input[type="checkbox"]:checked::before {
+  content: "\2713";
+  width: 100%;
+  border: none;
+  color: #404040;
+  font-size: 10px;
+  font-weight: bold;
+}
+.task-select .dropdown .searchList div {
+  display: inline-block;
+}
+.task-select .dropdown .searchList .selectall,
+.task-select .dropdown .searchList .list-item {
+  width: 100%;
+  padding: 0;
+}
+.task-select .dropdown .searchList .selectall .sure {
+  width: 42px;
+  height: 28px;
+  background: #4a90e2;
+  color: #fff;
+  text-align: center;
+  border-radius: 4px;
+  float: right;
+}
+.task-select .dropdown .searchList .list-item-group {
+  height: 210px;
+  width: 100%;
+  overflow-y: auto;
+}
+.task-select .dropdown .searchList .list-item-group::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+  background-color: #e5e5e5;
+  border-radius: 3px;
+}
+.task-select .dropdown .searchList .list-item-group::-webkit-scrollbar-thumb {
+  background: #a0a0a0;
+  border-radius: 3px;
+}
+.task-select .dropdown .searchList .list-item:hover {
+  background: #0081c2;
+}
+.task-select .dropdown .searchList .list-item:hover div {
+  color: #fff;
+}
+.task-select
+  .dropdown
+  .searchList
+  .list-item:hover
+  input[type="checkbox"]:checked::before {
+  background: #0081c2;
+}
+.task-select
+  .dropdown
+  .searchList
+  .list-item:hover
+  input[type="checkbox"]::before {
+  background: #0081c2;
+}
+.task-select .dropdown .searchList .nickname,
+.task-select .dropdown .searchList .selectext,
+.task-select .dropdown .searchList .mobile {
+  margin-left: 10px;
+  color: #aaaaaa;
+  width: 40%;
+}
+.task-select .dropdown .searchList .selectext {
+  color: #333333;
+}
+.task-select .dropdown .searchList .mobile {
+  width: 40%;
+  text-align: right;
 }
 </style>
 <template>
-  <div class="charge">
-    <!-- 负责人的下拉框 -->
-    <div class="show" :class="{'gray':selected==''}" @click='toggle'>
-      {{selected==''?"请选择":selected}}
-      <!-- <Icon type="arrow-down-b" class="ico"></Icon> -->
-    </div>
-    <div class="select" v-show="isShow" v-el:sel :style="{top:top}">
-      <i-select
-        :model.sync="select"
-        filterable
-        clearable
-        @on-change="change"
-        placeholder="搜索......."
-      >
-        <i-option
-          v-for="(index,item) in chargeList"
-          :key="index"
-          :value="item.name"
-          :label="item.name"
-        >
-          <span class='name'>{{item.name}}</span>
-          <span class='tel'>{{item.tel}}</span>
-        </i-option>
-      </i-select>
+  <div class="task-select" v-clickoutside="changeOff">
+    <div class="showName" @click="dropdownShow">{{listItem.leader_uid||'请选择'}}</div>
+    <div class="dropdown" v-show="searchListShow" v-el:drop>
+      <div class="search">
+        <input type="text" placeholder="搜索....." v-model="searchValue" />
+      </div>
+      <div class="searchList">
+        <div class="list-item-group">
+          <div class="list-item clearFix" v-for="item in showItems" @click="selectThis(item)">
+            <label>
+              <div class="nickname">{{item.nickname}}</div>
+              <div class="mobile">{{item.mobile}}</div>
+            </label>
+          </div>
+          <div class="list-item clearFix" v-if="!members">
+            <label>
+              <div>暂时没有负责人</div>
+            </label>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 <script>
 import VueEvent from "../model/VueEvent.js";
+import clickoutside from "../../directives/clickoutside.js";
 export default {
   name: "charge",
-  props: ["item", "chargeList"],
+  props: {
+    members: {},
+    listItem: {}
+  },
+  directives: {
+    clickoutside
+  },
   data() {
     return {
-      selected: "",
-      select: "",
-      isShow: false,
-      top:'100%'
+      nickNameList: [],
+      memberSelected: "",
+      showItems: [],
+      searchValue: "",
+      searchListShow: false
     };
   },
   ready() {
-    // 初始赋值
-    var self=this;
-    if (this.item && this.item.charge) {
-      this.selected = this.item.charge;
+    var self = this;
+    this.showItems = this.members;
+    var winHeight;
+    var drop=this.$els.drop;
+    drop.style.visibility='hidden';
+    drop.style.display='block';
+    var dropTop=drop.getBoundingClientRect().top;
+    var dropHeight=drop.clientHeight;
+    drop.style.display='none';
+    drop.style.visibility='visible';
+    if (window.innerHeight) {
+      winHeight = window.innerHeight;
+    } else if (document.body && document.body.clientHeight) {
+      winHeight = document.body.clientHeight;
     }
-    // 判断弹出应该出现的位置
-    var sel=this.$els.sel;
-    var dropDown=this.$els.sel.children[0].children[1];
-    sel.style.visibility='hidden';
-    sel.style.display='block';
-    dropDown.style.setProperty('display','block','important');
-    var h=dropDown.offsetHeight+sel.offsetHeight+10;
-    var t=sel.getBoundingClientRect().top;
-    var sh=window.innerHeight;
-    sel.style.display='none';
-    sel.style.visibility='inherit';
-    // 如果元素距离屏幕上边+元素的高度》屏幕的高度，top=-元素高度
-    if(t+h>sh){
-      this.top=-h+'px';
+    if(winHeight-dropTop<dropHeight&&dropTop-30>dropHeight){
+      drop.style.top='-'+dropHeight+'px';
     }
-    // 如果元素的高度》元素距离屏幕上边的距离,还是在下边
-    if(h>t){
-      this.top='100%';
-    }
-    VueEvent.$on("charge-close",function(){
-      self.isShow=false;
-    })
   },
   methods: {
-    // 选中负责人的时候触发事件
-    change: function() {
-      // 如果选择的不是空的，把已选择的数据改一下
-      if(this.select!=''){
-        this.selected=this.select;
-        VueEvent.$emit("charge-change", this.selected, this.item);
-        this.isShow=false;
-      }
+    changeOff: function() {
+      this.searchListShow = false;
     },
-    toggle:function(){
-      // 展示弹出并把下拉框直接展示
-      if(!this.isShow){
-        console.log(this.isShow)
-        VueEvent.$emit("charge-close");
-        this.isShow=!this.isShow;
-      }else{
-        this.isShow=!this.isShow;
+    dropdownShow: function() {
+      // VueEvent.$emit('close-all');
+      this.searchListShow = true;
+    },
+    // 选中负责人的时候触发事件
+    selectThis: function(item) {
+      // 单选点击的事件，把需要的值传过去
+      this.memberSelected = item.nickname;
+      this.searchListShow = false;
+      VueEvent.$emit("charge-change", this.listItem, this.memberSelected);
+    }
+  },
+  watch: {
+    searchValue: function() {
+      // 这需要加一个判断moblie的
+      if (!this.members) {
+        return;
       }
-      this.select='';
+      let arr = [];
+      for (let i = 0; i < this.members.length; i++) {
+        if (this.members[i].nickname.indexOf(this.searchValue) !== -1 || (this.members[i].mobile+'').indexOf(this.searchValue) !==-1) {
+          arr.push(this.members[i]);
+        }
+      }
+      this.showItems = arr;
+    },
+    searchListShow: function() {
+      this.searchValue = "";
     }
   }
 };

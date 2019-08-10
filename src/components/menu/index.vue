@@ -1,116 +1,200 @@
-<style scope lang='less'>
+<style scoped lang='less'>
 .clear:after{
   display: block;
   clear: both;
   content: ' ';
 }
-.itemGroup {
-  margin: 0;
-  padding: 0;
-  .act {
-    background: #e5e5e5;
-  }
-  .item {
-    line-height: 30px;
-    font-size: 14px;
-    list-style: none;
-    .left,
-    .right {
-      float: left;
-      div {
-        float: left;
+.label1,.label2,.label3{
+  color:#fff;
+  border-radius:0 5px 5px 0;
+}
+.label1{
+  line-height:30px;
+  background:#999999;
+  width:50%;
+  text-indent:1rem;
+}
+.label2{
+  line-height:30px;
+  background:#4d4c4c;
+  width:20%;
+  text-indent:2rem;
+}
+.label3{
+  margin-top:5px;
+  line-height:30px;
+  background:#a8a8a8;
+  width:20%;
+  text-align:center;
+}
+.item{
+  line-height:28px;
+  font-size:12px;
+  color:#1d1f1f;
+  border-top:1px solid #ededed; 
+  cursor:pointer;
+  padding:2px 0 2px 2%;
+  list-style: decimal inside !important;
+    div{
+      display:inline-block;
+      box-sizing:border-box;
+    }
+    .left{
+      width:65%;
+      .icon{
+        width:28px;
+        text-align:center;
       }
-      input {
-        float: left;
+      .checkboxs{
+        width:12px;
+        height:12px;
+        display: inline-block;
+        text-align: center;
+        vertical-align: middle;
+        position:relative;
+        top:-3px;
+      }
+      .inds{
+        font-size: 12px;
+        color: #999999;
+        margin-left: 5px;
+        min-width: 20px;
+        text-align: left;
+      }
+      .title {
+        margin-left:2px;
+        input {
+          line-height: 30px;
+          height: 30px;
+          padding: 0;
+          margin: 0;
+          border: none;
+          outline: none;
+          background: none;
+        }
+      }
+      .done {
+        input {
+          color: #999999;
+        }
       }
     }
-    .right {
-      float: right;
-      width: 38%;
+    .right{
+      width:30%;
+      .time{
+        width:50%;
+        text-align:center;
+      }
+      .over {
+        color: #ff0000;
+      }
+      .urgency{
+        color: #fff;
+        width: 10%;
+        text-align:center;
+        border-radius:3px;
+      }
+      .wary{
+        color: black;
+      }
+      .warning{
+        color: red;
+      }
+      .error{
+        color: #fff;
+        background: red;
+      }
+      .charge{
+        width:35%;
+      }
     }
-    .icon {
-      width: 30px;
-      text-align: center;
-      font-size: 15px;
-      color:#ccc;
-    }
-  }
-  .item:after {
-    display: block;
-    clear: both;
-    content: " ";
-  }
-  .item {
-    border-top: 1px solid #e8e8e8;
-  }
+}
+.item:first-child{
+  border:none;
+}
+.active{
+  background:#e5e5e5;
+}
+.done .title input{
+  color: #999;
 }
 </style>
 <template>
     <!-- 整个列表 -->
-    <template v-for="(listInd,item) in list">
-      <li class="item" :key="listInd" @click='selectNewItem(item,fatherId?fatherId+"."+(listInd+1):listInd+1)' :class="{'act':item.id==selected.id}">
-        <div class="clear">
+    <template v-for="(listInd,listItem) in task">
+      <div v-if='listItem.type=="label1"' class='label1'>{{listItem.text}}</div>
+      <div v-if='listItem.type=="label2"' class='label2'>{{listItem.text}}</div>
+      <div v-if='listItem.type=="label3"' class='label3'>{{listItem.text}}</div>
+      <li v-if='listItem.type=="task"' class="item " :key="listInd" :id="listItem._id" v-drag-and-drop drop="handleDrop" @click='selectNewItem(listItem,fatherId?fatherId+"."+(listInd+1):listInd+1)' :class='{"active":selectItem==listItem,"done":listItem.finish_time?true:false}'>
           <!-- 左半部分 -->
-          <div class="left">
-            <!-- 索引 -->
-            <!-- <ind :class="{'indAct':item.id==selected.id}">1</ind> -->
+          <div class="left"> 
             <!-- 图标 -->
             <div class="icon">
-              <Icon :type="item.icon"></Icon>
+              <b>▲</b>
             </div>
             <!-- 复选框 -->
-            <check-box :is-check="item.isCheck" @click="isCheck(item)"></check-box>
+            <check-box class='checkboxs' :is-check='listItem.finish_time' @click='checkChange(listItem,fatherId?fatherId+"."+(listInd+1):listInd+1)'></check-box>
             <!-- 序列号 -->
-            <inds :style='{"text-indent":textIndentSize}'>{{fatherId?fatherId+"."+(listInd+1):listInd+1}}</inds>
+            <div v-if='!islabel' style='visibility:hidden;'>{{fatherId}}</div>
+            <div v-if='!islabel' class='inds'> {{fatherId?fatherId+"."+(listInd+1):listInd+1}} </div>
             <!-- 标题 -->
-            <title :class="[item.isCheck?'done':'']" :title="item.title" :item='item'></title>
+            <div class='title'>
+              <input type="text" v-model="listItem.task_name" @input='titleChange(listItem,fatherId?fatherId+"."+(listInd+1):listInd+1)'/>
+            </div>
           </div>
           <!-- 右半部分 -->
           <div class="right">
             <!-- 截止时间 -->
-            <time :time="item.time" :check='item.isCheck'></time>
+            <div class='time' v-show=' !listItem.finish_time && listItem.deadline ' :class='{"over": listItem.deadline < new Date().getTime()}'>
+              {{listItem.deadline|totime}}
+            </div>
+            <div class='time' v-show=' !listItem.finish_time && !listItem.deadline ' :class='{"over": listItem.deadline < new Date().getTime()}'>
+              &nbsp;
+            </div>
+            <div class='time' v-show='listItem.finish_time'>
+              已完成
+            </div>
             <!-- 紧急度 -->
-            <urgency :urgency="item.urgency"></urgency>
+            <div class='urgency' :class='{"wary":listItem.priority==2,"warning":listItem.priority==3,"error":listItem.priority==4}'>☆</div>
             <!-- 负责人 -->
-            <charge :item="item" :charge-list="chargeList"></charge>
+            <div class='charge' >
+              <charge :members='members' :list-Item='listItem'></charge>
+            </div>
           </div>
-        </div>
       </li>
-      <menu v-if="item.children" :list="item.children" :charge-list="chargeList" :father-id='fatherId?fatherId+"."+(listInd+1):listInd+1' :selected='selected'></menu>
+      <menu v-if="listItem.children" :task="listItem.children" :members="members" :father-id='fatherId?fatherId+"."+(listInd+1):listInd+1' :select-item='selectItem' :islabel='islabel'></menu>
     </template>
 </template>
 <script>
+import Vue from "Vue";
 import VueEvent from "../model/VueEvent.js";
-import ind from "../ind";
 import checkBox from "../checkBox";
-import inds from "../inds";
-import title from "../title";
-import time from "../time";
-import urgency from "../urgency";
 import charge from "../charge";
+import _debounce from 'lodash/debounce';
+import dragAndDrop from 'vue-drag-and-drop';
+Vue.use(dragAndDrop);
 
 export default {
   name: "menu",
   components: {
-    ind,
     checkBox,
-    inds,
-    title,
-    time,
-    urgency,
     charge
   },
+  ready(){},
   props:{
-    list:{
+    task:{ 
 
     },
-    chargeList:{
+    members:{
       
+    },
+    selectItem:{
+
     },
     fatherId:{
 
     },
-    selected:{
+    islabel:{
 
     }
   },
@@ -121,24 +205,39 @@ export default {
   },
   methods: {
     // 复选框选中更改
-    isCheck: function(item) {
+    checkChange: function(item) {
       VueEvent.$emit('check-change',item)
     },
     // 选中任务的事件
     selectNewItem:function(item,id){
-      VueEvent.$emit("select-item",item,id)
+      VueEvent.$emit("select-item",item,id+'')
+    },
+    titleChange:_debounce(function(item,id) {
+      VueEvent.$emit('title-change',item,item.task_name,id)
+    },300),
+    handleDrop:function(itemOne, itemTwo){
+      this.loggedEvent = 'handleDrop';
+      VueEvent.$emit('drag-change',itemOne.id,itemTwo.id)
     }
   },
-  computed:{
-    // 根据传递的序列判断需要递进的层级
-    textIndentSize:function(){
-      if(this.fatherId&&this.fatherId.length>1){
-        return (this.fatherId.split('.').length)*0.5+"rem";
-      }else if(this.fatherId){
-        return "0.5rem";
-      }else{
-        return 0;
+  filters:{
+    totime:function(val){
+      var leftTime, d, h, m, s, times;
+      leftTime = val-new Date().getTime();
+      if (leftTime >= 0) {
+        d = Math.floor(leftTime / 1000 / 60 / 60 / 24);
+        h = Math.floor((leftTime / 1000 / 60 / 60) % 24);
+        m = Math.floor((leftTime / 1000 / 60) % 60);
+        s = Math.floor((leftTime / 1000) % 60);
+        times = d + "天" + h + "小时" ;
+      } else {
+        d = Math.ceil(leftTime / 1000 / 60 / 60 / 24);
+        h = Math.ceil((leftTime / 1000 / 60 / 60) % 24);
+        m = Math.ceil((leftTime / 1000 / 60) % 60);
+        s = Math.ceil((leftTime / 1000) % 60);
+        times = "超期" + -d + "天" + -h + "小时";
       }
+      return times;
     }
   }
 };

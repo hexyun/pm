@@ -1,13 +1,16 @@
-<style scope lang='less'>
+<style scoped lang='less'>
 input[type="checkbox"] {
-  margin-top: 9px;
-  width: 10px;
-  height: 10px;
+  width: 100%;
+  height: 100%;
   display: inline-block;
   text-align: center;
   vertical-align: middle;
-  line-height: 10px;
-  position: relative;
+  position: absolute;
+  left:0;
+  top:0;
+  margin:0;
+  padding:0;
+  lint-height:12px;
 }
 input[type="checkbox"]::before {
   content: "";
@@ -17,14 +20,16 @@ input[type="checkbox"]::before {
   background: #fff;
   width: 100%;
   height: 100%;
+  lint-height:12px;
   border: 1px solid #03A9F4;
 }
 input[type="checkbox"]:checked::before {
   content: "\2713";
   width: 100%;
   border: none;
-  color: 474747 ;
+  color: #474747 ;
   font-size: 10px;
+  line-height:12px;
   font-weight: bold;
 }
 </style>

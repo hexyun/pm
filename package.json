@@ -1,6 +1,6 @@
 {
   "name": "hexyun-task-list",
-  "version": "0.0.5",
+  "version": "0.5.8",
   "title": "Vue Stage View",
   "description": "Vue Kityminder",
   "homepage": "https://github.com/hexyun/vue-stage-view",
@@ -10,7 +10,7 @@
     "image viewer",
     "viewer"
   ],
-  "main": "dist/stage.min.js",
+  "main": "dist/tasklist.min.js",
   "files": [
     "dist",
     "src"
@@ -43,9 +43,9 @@
     "core-js": "^2.4.1",
     "errno": "^0.1.7",
     "hexdo": "0.0.3",
-    "iview": "^1.0.2",
     "open": "^6.4.0",
     "vue": "1.0.28",
+    "vue-drag-and-drop": "jiangtao/vue-drag-and-drop",
     "webpack-dev-middleware": "^3.7.0"
   },
   "devDependencies": {
