@@ -28,6 +28,7 @@
 }
 .item{
   line-height:28px;
+  height: 33px;
   font-size:12px;
   color:#1d1f1f;
   border-top:1px solid #ededed; 
@@ -133,6 +134,12 @@
       }
     }
 }
+.ulList{
+  list-style: none !important;
+  .itemWrap{
+    left: 10px;
+  }
+}
 .item:first-child{
   border:none;
 }
@@ -152,7 +159,7 @@
       <div v-if='listItem.type=="label1"' class='label1'>{{listItem.text}}</div>
       <div v-if='listItem.type=="label2"' class='label2'>{{listItem.text}}</div>
       <div v-if='listItem.type=="label3"' class='label3'>{{listItem.text}}</div>
-      <li v-if='listItem.type=="task"' class="item " :key="listInd" :id="listItem._id" v-drag-and-drop drop="handleDrop" @click='selectNewItem(listItem,fatherId?fatherId+"."+(listInd+1):listInd+1)' :class='{"active":selectItem==listItem,"done":listItem.finish_time?true:false}'>
+      <li v-if='listItem.type=="task"' class="item " :key="listInd" :id="listItem._id" v-drag-and-drop drop="handleDrop" @click='selectNewItem(listItem,fatherId?fatherId+"."+(listInd+1):listInd+1)' :class='{"active":selectItem==listItem,"done":listItem.finish_time?true:false,"ulList":!isol}'>
         <div class="itemWrap">
           <!-- 左半部分 --> 
           <div class="left"> 
@@ -163,13 +170,14 @@
             <!-- 复选框 -->
             <check-box class='checkboxs' :is-check='listItem.finish_time' @click='checkChange(listItem,fatherId?fatherId+"."+(listInd+1):listInd+1)'></check-box>
             <!-- 序列号 -->
-            <div v-if='!islabel' style='visibility:hidden;'>{{fatherId}}</div>
-            <div v-if='!islabel' class='inds'> {{fatherId?fatherId+"."+(listInd+1):listInd+1}} </div>
+            <div v-if='islabel' style='visibility:hidden;'>{{fatherId}}</div>
+            <div v-if='islabel' class='inds'> {{fatherId?fatherId+"."+(listInd+1):listInd+1}} </div>
             <!-- 展开按钮 -->
-            <div class="open" v-if='listItem.children' @click='openThis(listItem)'>{{listItem.isOpen?'-':'+'}}</div>
+            <div class="open" v-if='listItem.children&&listItem.children.length>0' @click='openThis(listItem)'>{{listItem.isOpen?'-':'+'}}</div>
             <!-- 标题 -->
             <div class='title'>
-              <input type="text" v-model="listItem.task_name" @focus="savePreTitle(listItem.task_name)" @blur='titleChange(listItem,fatherId?fatherId+"."+(listInd+1):listInd+1)'/>
+              <div v-if='!isTitleChange'>{{listItem.task_name}}</div>
+              <input type="text" v-if='isTitleChange' v-model="listItem.task_name" @focus="savePreTitle(listItem.task_name)" @blur='titleChange(listItem,fatherId?fatherId+"."+(listInd+1):listInd+1)'/>
             </div>
           </div>
           <!-- 右半部分 -->
@@ -193,7 +201,7 @@
           </div>
         </div>
       </li>
-      <menu v-if="listItem.children&&listItem.isOpen" :task="listItem.children" :members="members" :father-id='fatherId?fatherId+"."+(listInd+1):listInd+1' :select-item='selectItem' :islabel='islabel' :mainid='mainid'></menu>
+      <menu v-if="listItem.children&&listItem.children.length>0&&listItem.isOpen" :task="listItem.children" :members="members" :father-id='fatherId?fatherId+"."+(listInd+1):listInd+1' :select-item='selectItem' :islabel='islabel' :mainid='mainid' :isol='isol' :is-title-change='isTitleChange'></menu>
     </template>
 </template>
 <script>
@@ -211,24 +219,14 @@ export default {
     charge
   },
   props:{
-    task:{ 
-
-    },
-    members:{
-      
-    },
-    selectItem:{
-
-    },
-    fatherId:{
-
-    },
-    islabel:{
-
-    },
-    mainid:{
-      
-    }
+    task:{},
+    members:{},
+    selectItem:{},
+    fatherId:{},
+    islabel:{},
+    mainid:{},
+    isol:{},
+    isTitleChange:{}
   },
   data() {
     return {

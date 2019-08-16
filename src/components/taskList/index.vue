@@ -18,7 +18,7 @@
   <div class="taskListWrap">
     <ol class="itemGroup" type='1'>
       <li v-if="!task||task.length==0" class="none">点击添加按钮，开始添加第一个项目</li>
-      <menu :task="task" :members="members" :select-item="selectItem" :islabel='islabel' :mainid='mainid'></menu>
+      <menu :task="task" :members="members" :select-item="selectItem" :islabel='islabel' :mainid='mainid' :isol='isol' :is-title-change='isTitleChange'></menu>
     </ol>
   </div>
 </template>
@@ -37,7 +37,9 @@ export default {
     members: {},
     selectId: {},
     islabel:{default:false},
-    mainid:{}
+    mainid:{},
+    isol:{},
+    isTitleChange:{}
   },
   methods: {},
   ready() {
