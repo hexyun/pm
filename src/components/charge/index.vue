@@ -9,8 +9,15 @@
   content: " ";
 }
 .task-select .showName {
+<<<<<<< HEAD
   width: 100%;
   text-align: center;
+=======
+  width: 65px;
+  text-align: right;
+  overflow: hidden;
+  height: 28px;
+>>>>>>> 2019年8月16日
 }
 .task-select .dropdown {
   background: #fff;
@@ -22,10 +29,15 @@
   font-size: 12px;
   line-height: 30px;
   box-shadow: rgba(0, 0, 0, 0.3) 0px 2px 3px;
+<<<<<<< HEAD
   position: absolute;
   z-index: 9;
   top: 100%;
   left: 0;
+=======
+  position: fixed;
+  z-index: 99999;
+>>>>>>> 2019年8月16日
 }
 .task-select .dropdown .search input {
   width: 100%;
@@ -133,14 +145,27 @@
 </style>
 <template>
   <div class="task-select" v-clickoutside="changeOff">
+<<<<<<< HEAD
     <div class="showName" @click="dropdownShow">{{listItem.leader_uid||'请选择'}}</div>
+=======
+    <div class="showName" @click="dropdownShow" v-el:showname>{{listItem.nickname||'请选择'}}</div>
+>>>>>>> 2019年8月16日
     <div class="dropdown" v-show="searchListShow" v-el:drop>
       <div class="search">
         <input type="text" placeholder="搜索....." v-model="searchValue" />
       </div>
       <div class="searchList">
         <div class="list-item-group">
+<<<<<<< HEAD
           <div class="list-item clearFix" v-for="item in showItems" @click="selectThis(item)">
+=======
+          <div
+            class="list-item clearFix"
+            v-for="(index,item) in showItems"
+            :key="index"
+            @click="selectThis(item)"
+          >
+>>>>>>> 2019年8月16日
             <label>
               <div class="nickname">{{item.nickname}}</div>
               <div class="mobile">{{item.mobile}}</div>
@@ -163,7 +188,12 @@ export default {
   name: "charge",
   props: {
     members: {},
+<<<<<<< HEAD
     listItem: {}
+=======
+    listItem: {},
+    mainid:{}
+>>>>>>> 2019年8月16日
   },
   directives: {
     clickoutside
@@ -180,6 +210,7 @@ export default {
   ready() {
     var self = this;
     this.showItems = this.members;
+<<<<<<< HEAD
     var winHeight;
     var drop=this.$els.drop;
     drop.style.visibility='hidden';
@@ -196,21 +227,67 @@ export default {
     if(winHeight-dropTop<dropHeight&&dropTop-30>dropHeight){
       drop.style.top='-'+dropHeight+'px';
     }
+=======
+>>>>>>> 2019年8月16日
   },
   methods: {
     changeOff: function() {
       this.searchListShow = false;
+<<<<<<< HEAD
     },
     dropdownShow: function() {
       // VueEvent.$emit('close-all');
       this.searchListShow = true;
+=======
+      this.$els.drop.display ='none';
+    },
+    dropdownShow: function() {
+      this.searchListShow = true;
+      var winHeight = 0;
+      var winWidth = 0;
+      var drop = this.$els.drop;
+      drop.style.display ='block';
+      var showName = this.$els.showname;
+      var showTop = showName.getBoundingClientRect().top;
+      var showLeft = showName.getBoundingClientRect().left;
+      var showHeight = showName.clientHeight;
+      var dropHeight = drop.clientHeight;
+      var dropWidth = drop.clientWidth;
+      if (window.innerHeight) {
+        winHeight = window.innerHeight;
+      } else if (document.body && document.body.clientHeight) {
+        winHeight = document.body.clientHeight;
+      }
+      if (window.innerWidth) {
+        winWidth = window.innerWidth;
+      } else if (document.body && document.body.clientWidth) {
+        winWidth = document.body.clientWidth;
+      }
+      if (winHeight - showTop - showHeight < dropHeight && showTop - 30 > dropHeight) {
+        drop.style.top = showTop - dropHeight + "px";
+      } else {
+        drop.style.top = showTop + showHeight + "px";
+      }
+      if(winWidth-showLeft<dropWidth){
+        drop.style.left = winWidth - dropWidth - 18 +'px';
+      }else if(showLeft<dropWidth){
+        drop.style.left ="10px";
+      }else{
+        drop.style.left = showLeft + "px";
+      }
+>>>>>>> 2019年8月16日
     },
     // 选中负责人的时候触发事件
     selectThis: function(item) {
       // 单选点击的事件，把需要的值传过去
       this.memberSelected = item.nickname;
+<<<<<<< HEAD
       this.searchListShow = false;
       VueEvent.$emit("charge-change", this.listItem, this.memberSelected);
+=======
+      this.changeOff();
+      VueEvent.$emit("charge-change_"+this.mainid, this.listItem, item);
+>>>>>>> 2019年8月16日
     }
   },
   watch: {
@@ -221,7 +298,14 @@ export default {
       }
       let arr = [];
       for (let i = 0; i < this.members.length; i++) {
+<<<<<<< HEAD
         if (this.members[i].nickname.indexOf(this.searchValue) !== -1 || (this.members[i].mobile+'').indexOf(this.searchValue) !==-1) {
+=======
+        if (
+          this.members[i].nickname.indexOf(this.searchValue) !== -1 ||
+          (this.members[i].mobile + "").indexOf(this.searchValue) !== -1
+        ) {
+>>>>>>> 2019年8月16日
           arr.push(this.members[i]);
         }
       }
@@ -229,6 +313,12 @@ export default {
     },
     searchListShow: function() {
       this.searchValue = "";
+<<<<<<< HEAD
+=======
+    },
+    members:function(){
+      this.showItems = this.members;
+>>>>>>> 2019年8月16日
     }
   }
 };
