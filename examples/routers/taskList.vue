@@ -1,22 +1,5 @@
 <template>
   <div>
-<<<<<<< HEAD
-    <task-list></task-list>
-  </div>
-</template>
-<script>
-import Vue from 'Vue';
-
-export default {
-  data() {
-    return {};
-  },
-  ready() {},
-  methods: {
-    drag() {
-      console.log('dragstart');
-    }
-=======
     <task-list :task="task" :members='members' :select-item='selectItem' :select-id='selectId' :islabel='islabel' mainid='qwe' ></task-list>
   </div>
 </template>
@@ -167,7 +150,6 @@ export default {
   ready() {},
   methods: {
     
->>>>>>> 2019年8月16日
   }
 };
 </script>
