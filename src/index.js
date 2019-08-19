@@ -1,7 +1,9 @@
 import taskList from './components/taskList';
+import taskListTwo from './components/taskListTwo';
 
 const Components = {
-  taskList
+  taskList,
+  taskListTwo
 };
 
 const install = function(Vue) {

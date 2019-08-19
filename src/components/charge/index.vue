@@ -1,7 +1,7 @@
 <style scoped lang='less'>
 .task-select {
   position: relative;
-  width: 100%;
+  width: 65px;
 }
 .task-select .clearFix:after {
   display: block;
@@ -9,7 +9,7 @@
   content: " ";
 }
 .task-select .showName {
-  width: 65px;
+  width: 100%;
   text-align: right;
   overflow: hidden;
   height: 28px;
@@ -237,7 +237,6 @@ export default {
   },
   watch: {
     searchValue: function() {
-      // 这需要加一个判断moblie的
       if (!this.members) {
         return;
       }

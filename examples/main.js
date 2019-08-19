@@ -16,6 +16,11 @@ router.map({
     component: function(resolve) {
       require(['./routers/taskList.vue'], resolve);
     }
+  },
+  '/taskListTwo': {
+    component: function(resolve) {
+      require(['./routers/taskListTwo.vue'], resolve);
+    }
   }
 });
 
@@ -28,6 +33,6 @@ router.afterEach(function(transition) {
 });
 
 router.redirect({
-  '*': "/taskList"
+  '*': "/taskListTwo"
 });
 router.start(App, '#app');
