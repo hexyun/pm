@@ -133,7 +133,7 @@
 </style>
 <template>
   <div class="task-select" v-clickoutside="changeOff">
-    <div class="showName" @click="dropdownShow" v-el:showname>{{listItem.nickname||'请选择'}}</div>
+    <div class="showName" @click="dropdownShow" v-el:showname>{{ nickname ||'请选择'}}</div>
     <div class="dropdown" v-show="searchListShow" v-el:drop>
       <div class="search">
         <input type="text" placeholder="搜索....." v-model="searchValue" />
@@ -147,7 +147,7 @@
             @click="selectThis(item)"
           >
             <label>
-              <div class="nickname">{{item.nickname}}</div>
+              <div class="nickname">{{item.nickname }}</div>
               <div class="mobile">{{item.mobile}}</div>
             </label>
           </div>
@@ -162,6 +162,7 @@
   </div>
 </template>
 <script>
+import Vue from 'vue'
 import VueEvent from "../model/VueEvent.js";
 import clickoutside from "../../directives/clickoutside.js";
 export default {
@@ -180,12 +181,20 @@ export default {
       memberSelected: "",
       showItems: [],
       searchValue: "",
-      searchListShow: false
+      searchListShow: false,
+      selectedItem: this.listItem
     };
   },
   ready() {
     var self = this;
     this.showItems = this.members;
+  },
+  computed: {
+    nickname() {
+      const v = this.selectedItem
+      const nick = this.members.find(t => v.leader_uid === t.user_id )
+      return nick ? nick.nickname : ''
+    }
   },
   methods: {
     changeOff: function() {
@@ -229,8 +238,11 @@ export default {
     },
     // 选中负责人的时候触发事件
     selectThis: function(item) {
+      console.log('ssss', item)
       // 单选点击的事件，把需要的值传过去
-      this.memberSelected = item.nickname;
+      // this.memberSelected = item.nickname;
+      Vue.set(item, 'leader_uid', item.user_id)
+      this.selectedItem = item
       this.changeOff();
       VueEvent.$emit("charge-change_"+this.mainid, this.listItem, item);
     }

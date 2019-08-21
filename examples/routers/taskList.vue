@@ -28819,7 +28819,7 @@ export default {
         "nickname": ""
       }
     ],
-      members: [{ nickname: "第一个1", mobile: 123 },{ nickname: "第一个2", mobile: 234 }]
+      members: [{ nickname: "第 一个1", mobile: 123, user_id: 'a1122344hh' },{ nickname: "第一个2", mobile: 234, user_id: 'xxxaa11232344' }]
     };
   },
   ready() {},
