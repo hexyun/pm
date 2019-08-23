@@ -19,6 +19,7 @@
       padding: 0 16px;
       position: relative;
       font-size: 12px;
+      cursor: pointer;
       .itemIndex {
         font-size: 10px;
         padding: 0 5px;
@@ -36,7 +37,7 @@
 
       .rank {
         font-size: 9px;
-        margin-left: 9px;
+        // margin-left: 9px;
         color: #999999;
       }
       .open {
@@ -130,6 +131,9 @@
   background: #a0a0a0;
   border-radius: 3px;
 }
+.dropDown {
+  display: none;
+}
 </style> 
 
 <template>
@@ -138,6 +142,7 @@
       <ul class="task-list-two-wrap" v-el:content>
         <li
           v-for="(index , listItem) in visibleData"
+          track-by="$index"
           class="list-item"
           :class="{'done':listItem.finish_time,'selected':selectItem._id==listItem._id}"
           :key="index"
@@ -146,17 +151,16 @@
           <!-- visibleData -->
           <div class="itemIndex" v-if="isol">{{listItem.ind}}</div>
           <div class="checkbox" @click="changeDone(listItem)"></div>
+          <div class="rank" v-if="islabel" style="visibility:hidden">{{listItem.positionInd}}</div>
+          <div class="rank" v-if="islabel" style="visibility:hidden">{{listItem.positionInd}}</div>
           <div class="rank" v-if="islabel">{{listItem.positionInd}}</div>
-          <div
-            class="open"
-            v-if="isOpen"
-            @click="changeOpen(listItem)"
-          >{{listItem.hasChildren?listItem.isOpen?'-':'+':''}}</div>
+          <!-- <div class="open">{{listItem.hasChildren?listItem.isOpen?'-':'+':''}}</div> -->
           <div class="title">
             <input
               type="text"
               v-model="listItem.task_name"
               :readonly="!isTitleChange"
+              @focus="savePreTitle(listItem.task_name)"
               @blur="changeTitle(listItem)"
             />
           </div>
@@ -170,31 +174,39 @@
               class="priority"
               :class="{'wary':listItem.priority==2,'warning':listItem.priority ==3,'error':listItem.priority==4}"
             >★</div>
-            <div class="leader" @click="changeLeader(listItem)">
-              <!-- {{listItem.nickname||'请选择'}} -->
-              <charge :members="members" :list-Item="listItem" :mainid="mainid"></charge>
-            </div>
+            <div class="leader" @click="changeLeader(listItem)">{{listItem.leader_uid|toNickName}}</div>
           </div>
         </li>
       </ul>
-      <!-- <charge-two :members="members" :list-Item="listItem" :mainid="mainid"></charge-two> -->
+      <charge-two
+        v-el:dropdown
+        v-show="searchListShow"
+        class="dropDown"
+        :style="selectXY"
+        :members="members"
+        :mainid="mainid"
+        v-clickoutside="changeOff"
+      ></charge-two>
     </div>
   </div>
 </template>
 
 <script>
 import Vue from "Vue";
-// import chargeTwo from "../chargeTwo";
-import charge from "../charge";
+import VueEvent from "../model/VueEvent.js";
+import chargeTwo from "../chargeTwo";
 import memory from "../model/memory.js";
 import dragAndDrop from "vue-drag-and-drop";
+import clickoutside from "../../directives/clickoutside.js";
 import { setTimeout } from "timers";
 Vue.use(dragAndDrop);
 export default {
   name: "taskListTwo",
   components: {
-    // chargeTwo
-    charge
+    chargeTwo
+  },
+  directives: {
+    clickoutside
   },
   props: {
     task: {},
@@ -205,17 +217,21 @@ export default {
     mainid: {},
     isol: {},
     isTitleChange: {},
-    isOpen: {},
     listId: {}
   },
   data() {
     return {
       visibleData: [],
       itemsHeight: 30,
-      searchListShow: false
+      onoff: true,
+      searchListShow: false,
+      selectXY: { left: 0, top: 0 },
+      preTitle: "",
+      mergedData: []
     };
   },
   filters: {
+    // 转换剩余时间
     totime: function(val) {
       var leftTime, d, h, m, s, times;
       leftTime = val - new Date().getTime();
@@ -233,17 +249,127 @@ export default {
         times = "超期 " + -d + "天" + -h + "小时";
       }
       return times;
+    },
+    // 转换nickname
+    toNickName: function(id) {
+      const nick = this.members.find(item => item.user_id == id);
+      return nick ? nick.nickname : "请选择";
     }
   },
   computed: {
+    // 动态计算包裹滚动元素高度
     contentHeight: function() {
-      return this.tasks.length * this.itemsHeight;
+      if (this.onoff) {
+        this.updateVisibleData();
+        this.onoff = false;
+      }
+      return this.mergedData.length * this.itemsHeight;
+    }
+  },
+  watch: {
+    task: function() {
+      console.log('tasklistv2task更改成功')
+      this.mergeData();
+      this.updateVisibleData();
+    }
+  },
+  methods: {
+    // 增加任务
+    addTask(addItem) {
+      if(this.changeGetItem(addItem._id)){
+        console.log('tasklistv2重复id')
+      }else{
+        // 添加数据
+        this.mergedData.push(addItem);
+        // 排序数据
+        this.mergedData = this.taskListSort(this.mergedData);
+        // 更改选中
+        this.selectItem = addItem;
+        // 更改滚动
+        this.scrollTo(addItem._id);
+        // 重新截取
+        this.handleScroll();
+      }
     },
-    tasks: function() {
-      var list = this.task;
+    // 删除任务
+    delTask(id) {
+      var targetId = id;
+      var father = "";
+      var next = {};
+      // 是否传了id
+      if (!targetId) {
+        // 没指定id，操作当前选中项目
+        targetId = this.selectItem._id;
+      }
+      // 找到fatherid
+      if (this.changeGetItem(targetId)){
+        // 获得fatherid,第一级的id是undefined
+        father = this.changeGetItem(targetId)[0].father_id || undefined;
+        // 判断fatherid下面有几个子集
+        var brother = this.mergedData.filter((item, index) => {
+          if (item.father_id == father) {
+            return true;
+          }
+          return false;
+        });
+        // 如果大于一个，next等于上一个子集
+        if (brother.length > 1) {
+          // 判断上一个是谁
+          brother.filter((item, index) => {
+            // 在兄弟数组中找到这个
+            if (item._id == targetId) {
+              // 判断是不是第一个
+              if (index == 0) {
+                // 是的话下一个就是现在的第二个
+                next = brother[1];
+              } else {
+                // 不是的话下一个就是现在的上一个
+                next = brother[index - 1];
+              }
+            }
+          });
+        } else {
+          // 如果没有兄弟
+          // 如果能找到fatherid对应的
+          if (this.changeGetItem(father)) {
+            // 下一个就是fatherid对应的
+            next = this.changeGetItem(father)[0];
+          } else {
+            // 否则下一个是空,可能是删光了或者数据错误
+            next = {};
+            console.log("tasklistv2没有找到同级或者父级任务");
+          }
+        }
+      }
+      // 切掉数据
+      this.mergedData.filter((item, index) => {
+        if (item._id == targetId) {
+          // 找到并切掉对应的
+          this.mergedData.splice(index, 1);
+          // 重新排序
+          this.mergedData = this.taskListSort(this.mergedData);
+          // 更新截取数据
+          this.updateVisibleData();
+          // 滚动一下滚动条触发截取事件
+          if (this.$els.tasklisttwo.scrollTop == 0) {
+            this.$els.tasklisttwo.scrollBy(0, 1);
+          } else {
+            this.$els.tasklisttwo.scrollBy(0, -1);
+          }
+        }
+      });
+      // 赋值下个选中的项目和滚动
+      this.selectItem = next;
+      // this.scrollTo(next._id);
+    },
+    // 合并数据
+    mergeData() {
+      // 创建一个空数组
+      var list=this.task;
       var arr = [];
-      // 如果是新增数据，并且本地有存储
-      if (this.timeStamp && memory.get("hex_" + this.listId)) {
+      // 如果有时间戳
+      if (this.timeStamp) {
+        console.log('tasklistv2数据合并')
         // 获取本地存储
         arr = memory.get("hex_" + this.listId);
         // 遍历新增数据
@@ -272,66 +398,24 @@ export default {
             });
           }
         }
-        arr = this.taskListSort(arr);
+        this.mergedData = arr;
       } else {
-        // 数据排序处理
-        arr = this.taskListSort(this.task);
+        console.log('tasklistv2数据覆盖')
+        this.mergedData = list;
       }
-      // 把修改和排序后的数据存入缓存
-      memory.set("hex_" + this.listId, arr);
-      // 存储一个字典
-      var taskSlist = memory.get("taskSlist");
-      // 如果有这个字典
-      if (taskSlist) {
-        // 如果字典内没有这个id
-        if (taskSlist.indexOf(this.listId) == -1) {
-          // 如果字典长度没超过5，直接加上
-          if(taskSlist.length<5){
-            taskSlist.push(this.listId)
-            memory.set("taskSlist", taskSlist);
-          }else{
-            // 如果超过了，删除第一个
-            let a=taskSlist[0];
-            taskSlist.push(this.listId)
-            taskSlist.shift();
-            memory.remove("hex_" + a);
-            memory.set("taskSlist", taskSlist);
-          }
-        }
+      // 排序
+      this.mergedData = this.taskListSort(this.mergedData);
+      console.log('tasklistv2数据合并覆盖成功')
+      // 存缓存
+      this.setMemory();
+      // 更新界面
+      if (this.$els.tasklisttwo.scrollTop == 0) {
+        this.$els.tasklisttwo.scrollBy(0, 1);
       } else {
-        // 如果没有，创建字典
-        memory.set("taskSlist", [this.listId]);
+        this.$els.tasklisttwo.scrollBy(0, -1);
       }
-      // 如果缓存满了，给个提示
-      if (!memory.set("hex_" + this.listId, arr)) {
-        console.log("缓存已经满了，请重新加载");
-      }
-      // memory.clear();
-      return arr;
-    }
-  },
-  methods: {
-    updateVisibleData(scrollTop) {
-      scrollTop = scrollTop || 0;
-      // 计算父级元素能渲染几个dom
-      const visibleCount = Math.ceil(
-        this.$els.tasklisttwo.offsetHeight / this.itemsHeight
-      );
-      // 根据滚动条计算第一个元素应该是哪个
-      const start = Math.floor(scrollTop / this.itemsHeight);
-      // 计算最后一个元素
-      const end = start + visibleCount;
-      // 获取需要渲染的列表
-      this.visibleData = this.tasks.slice(start, end);
-      // 更改滚动元素的偏移值
-      this.$els.content.style.webkitTransform = `translate3d(0, ${start *
-        this.itemsHeight}px, 0)`;
     },
-    handleScroll() {
-      // 滚动的时候执行列表更新事件
-      const scrollTop = event.target.scrollTop;
-      this.updateVisibleData(scrollTop);
-    },
+    // 排序事件
     taskListSort(list) {
       // 创建一个空数组用来储存结果
       var arr = [];
@@ -346,6 +430,7 @@ export default {
         // 如果有子任务
         if (children.length) {
           v.hasChildren = true;
+          v.isOpen = true;
           children.map((item, index) => {
             // 拼接序列号
             item.positionInd = positionInd + "." + (index + 1);
@@ -379,32 +464,193 @@ export default {
       }
       return arr;
     },
-    // changeOpen(item) {
-    //   console.log(item);
-    //   Vue.set(item, "isOpen", true);
-    // },
-    selectThis(item) {
-      this.selectItem = item;
+    // 操作缓存
+    setMemory() {
+      // 把数据存入缓存
+      memory.set("hex_" + this.listId, this.mergedData);
+      // 如果缓存满了，给个提示
+      console.log('tasklistv2存入缓存')
+      if (!memory.set("hex_" + this.listId, this.mergedData)) {
+        console.log("tasklistv2缓存已经满了，请重新加载");
+      }
+      // 存储一个字典
+      var taskSlist = memory.get("taskSlist");
+      // 如果有这个字典
+      if (taskSlist) {
+        // 如果字典内没有这个id
+        if (taskSlist.indexOf(this.listId) == -1) {
+          // 如果字典长度没超过5，直接加上
+          if (taskSlist.length < 5) {
+            taskSlist.push(this.listId);
+            memory.set("taskSlist", taskSlist);
+            console.log('tasklistv2更新缓存字典成功')
+          } else {
+            // 如果超过了，删除第一个
+            let a = taskSlist[0];
+            taskSlist.push(this.listId);
+            taskSlist.shift();
+            memory.remove("hex_" + a);
+            memory.set("taskSlist", taskSlist);
+            console.log('tasklistv2替换缓存字典成功')
+          }
+        }
+      } else {
+        // 如果没有，创建字典
+        memory.set("taskSlist", [this.listId]);
+        console.log('tasklistv2创建缓存字典成功')
+      }
     },
+    // 深拷贝
+    deepCopy(obj) {
+      var result = Array.isArray(obj) ? [] : {};
+      for (var key in obj) {
+        if (obj.hasOwnProperty(key)) {
+          if (typeof obj[key] === "object" && obj[key] !== null) {
+            result[key] = this.deepCopy(obj[key]);
+          } else {
+            result[key] = obj[key];
+          }
+        }
+      }
+      return result;
+    },
+    // 滚动事件，调用更新位置
+    handleScroll() {
+      // 滚动的时候执行列表更新事件
+      var scrollTop = event.target.scrollTop;
+      if (scrollTop == 0) {
+        this.$els.tasklisttwo.scrollBy(0, 1);
+      }
+      this.updateVisibleData(scrollTop);
+    },
+    // 更新列表和计算位置
+    updateVisibleData(scrollTop) {
+      scrollTop = scrollTop || 0;
+      // 计算父级元素能渲染几个dom
+      const visibleCount = Math.ceil(
+        this.$els.tasklisttwo.offsetHeight / this.itemsHeight
+      );
+      // 根据滚动条计算第一个元素应该是哪个
+      var start = Math.floor(scrollTop / this.itemsHeight);
+      // 计算最后一个元素
+      const end = start + visibleCount;
+      // 获取需要渲染的列表
+      this.visibleData = this.mergedData.slice(start, end);
+      // 更改滚动元素的偏移值
+      this.$els.content.style.webkitTransform = `translateY(${start *
+        this.itemsHeight}px)`;
+    },
+    // 获取指定id元素和更改指定id属性
+    changeGetItem(id, k, v) {
+      var ind = 0;
+      const tar = this.mergedData.filter((item, index) => {
+        if (item._id == id) {
+          if ((item, k, v)) {
+            Vue.set(item, k, v);
+          }
+          ind = index;
+          return true;
+        }
+      });
+      if(tar.length!==1){
+        console.log('tasklistv2一共找到了'+tar.length+'条相同id的数据，请确认数据是否正确')
+      };
+      return tar && tar.length == 1
+        ? [tar[0], ind, this.mergedData]
+        : undefined;
+    },
+    // 选中指定id
+    selectId(id) {
+      var a = this.changeGetItem(id);
+      if(a){
+        this.selectItem = a[0];
+      }
+    },
+    //滚动到指定id的位置
+    scrollTo(id) {
+      var a = this.changeGetItem(id);
+      if (a) {
+        this.$els.tasklisttwo.scrollTo(0, a[1] * this.itemsHeight);
+      }
+    },
+    // 选中触发事件
+    selectThis(item) {
+      var self = this;
+      this.selectItem = item;
+      this.$emit("select-item_" + self.mainid, this.mergedData, item);
+    },
+    // 完成触发事件
     changeDone(item) {
+      var self = this;
       if (item.finish_time) {
         item.finish_time = null;
       } else {
         item.finish_time = new Date().getTime();
       }
-      console.log(item.finish_time);
+      this.$emit("check-change_" + self.mainid, this.mergedData, item);
     },
+    // 储存之前的标题
+    savePreTitle(title) {
+      this.preTitle = title;
+    },
+    // 标题更改触发事件
     changeTitle(item) {
-      console.log(item.task_name);
+      var self = this;
+      if (item.task_name !== this.preTitle) {
+        this.$emit("title-change_" + self.mainid, this.mergedData, item);
+      }
     },
+    // 负责人下拉框展示
     changeLeader(item) {
-      // this.searchListShow=true;
+      var target = event.path[0];
+      var el = this.$els.dropdown;
+      el.style.visibility = "visible";
+      el.style.display = "block";
+      var targetTop = target.getBoundingClientRect().top;
+      var targetLeft = target.getBoundingClientRect().left;
+      var targetWidth = target.offsetWidth;
+      var targetHeight = target.offsetHeight;
+      var elWidth = el.offsetWidth;
+      var elHeight = el.offsetHeight;
+      var screenWidth = document.documentElement.clientWidth;
+      var screenHeight = document.documentElement.clientHeight;
+      var elX = 0;
+      var elY = 0;
+      elX = targetLeft + targetWidth / 2 - elWidth / 2;
+      elY = targetTop + targetHeight + 10;
+      elX < 0 ? (elX = 0) : null;
+      elY < 0 ? (elY = 0) : null;
+      elX > screenWidth - elWidth ? (elX = screenWidth - elWidth) : null;
+      elY > screenHeight - elHeight ? (elY = screenHeight - elHeight) : null;
+      Vue.set(this.selectXY, "left", elX + "px");
+      Vue.set(this.selectXY, "top", elY + "px");
+      this.searchListShow = true;
+    },
+    // 负责人下拉框关闭
+    changeOff() {
+      if (event.path[0].className.indexOf("leader") == -1) {
+        this.searchListShow = false;
+      }
     }
   },
   created() {},
   ready() {
     var self = this;
-    self.updateVisibleData();
+    // 初始化
+    Vue.nextTick(function() {
+      self.mergeData();
+      self.updateVisibleData();
+    });
+    // 负责人更改
+    VueEvent.$on("charge-change_" + self.mainid, function(item) {
+      self.selectItem.leader_uid = item.user_id;
+      self.searchListShow = false;
+      self.$emit(
+        "charge-change_" + self.mainid,
+        self.mergedData,
+        self.selectItem
+      );
+    });
   }
 };
 </script>

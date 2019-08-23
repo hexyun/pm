@@ -1,6 +1,15 @@
 <template>
   <div style="height:300px;width:60%">
+    <button @click="selectId">选中指定id</button>
+    <button @click="scrollTo">滚动到指定id</button>
+    <button @click="getId">获取id数据</button>
+    <button @click="changeId">修改id数据</button>
+    <button @click="addTask(addItem,1)">添加同级数据</button>
+    <button @click="addTask(addItem,0)">添加子级数据</button>
+    <button @click="delTask">删除数据</button>
+    <button @click='changeTask'>更改数据</button>
     <task-list-two
+      v-ref:listTwo
       :task="task"
       :time-stamp="timeStamp"
       :members="members"
@@ -9,15 +18,18 @@
       :mainid="mainid"
       :isol="isol"
       :is-title-change="isTitleChange"
-      :is-open="isOpen"
       :list-id="listId"
+      @select-item_qwertyuiop="selected"
+      @check-change_qwertyuiop="changeDone"
+      @title-change_qwertyuiop="changeTitle"
+      @charge-change_qwertyuiop="chargeChange"
     ></task-list-two>
   </div>
 </template>
 <script>
 import Vue from "Vue";
-import list from '../../assets/tasklist.js'
-// import list from '../../assets/tasklist2.js'
+import list from "../../assets/tasklist.js";
+import list2 from '../../assets/tasklist2.js'
 export default {
   data() {
     return {
@@ -25,13 +37,13 @@ export default {
       task: list,
       // task:[],
       // 人员列表
-      // timeStamp: 0,
-      timeStamp: 1566273596425,
+      timeStamp: 0,
+      // timeStamp: 1566273596425,
       members: [
-        { nickname: "望京", mobile: 123 },
-        { nickname: "朝阳门", mobile: 234 },
-        { nickname: "大望路", mobile: 345 },
-        { nickname: "西直门", mobile: 456 }
+        { nickname: "1望京", mobile: 123, user_id: 1 },
+        { nickname: "2朝阳门", mobile: 234, user_id: 2 },
+        { nickname: "3大望路", mobile: 345, user_id: 3 },
+        { nickname: "4西直门", mobile: 456, user_id: 4 }
       ],
       // 选中的任务
       selectItem: {},
@@ -46,11 +58,77 @@ export default {
       // 是否展开打开符号
       isOpen: true,
       // 清单id,必填项
-      listId: "5d53c99563e4ab4ec83d0f9b8"
+      listId: "5d53c99563e4ab4ec83d0f9b8",
+      addItem: {
+        _id: "5d53eba9571c63432db594c2412",
+        archived: false,
+        desc: "",
+        type: "task",
+        os: "web",
+        status: "finished",
+        priority: 1,
+        hex_type: "flow",
+        leader_uid: null,
+        finish_time: 1565924176351,
+        process_time: [],
+        removed: 0,
+        task_name: "adddd",
+        workspace_id: "5d53d54eadffd65cd99b3477",
+        inventory_id: "5d53e0e313c5491b655c5024",
+        project_id: "5d53d9cc7d1cd15d2ae8e47c",
+        app_id: "5d53d9eb681b815d3277965c",
+        page_id: "5d53d9eb681b815d32779662",
+        flow_id: "5d53d9ec681b815d32779722",
+        create_uid: "593e44b855a86260805ba046",
+        // father_id: "5d53eabd7b846b3ff53dbe69",
+        path:
+          "5d53e0e313c5491b655c5024/5d53e0e313c5491b655c5025/5d53eabd7b846b3ff53dbe69/5d53eabd7b846b3ff53dbe77/5d53eba9571c63432db594c2",
+        __v: 0,
+        complete_uid: "593e44b855a86260805ba046"
+      }
     };
   },
-  ready() {
-  },
-  methods: {}
+  ready() {},
+  methods: {
+    // v2
+    changeTask(){
+      this.timeStamp=123;
+      this.task=list2;
+    },
+    selectId() {
+      this.$refs.listtwo.selectId("5d53eabd7b846b3ff53dbe69");
+    },
+    scrollTo() {
+      this.$refs.listtwo.scrollTo("5d53eabd7b846b3ff53dbe69");
+    },
+    getId() {
+      console.log(this.$refs.listtwo.changeGetItem("5d53eabd7b846b3ff53dbe69"));
+    },
+    changeId() {
+      this.$refs.listtwo.changeGetItem(
+        "5d53eabd7b846b3ff53dbe69",
+        "task_name",
+        "修改后的标题"
+      );
+    },
+    selected(list, item) {
+      // console.log(item)
+    },
+    changeDone(list, item) {
+      console.log(item.finish_time);
+    },
+    changeTitle(list, item) {
+      console.log(item.task_name);
+    },
+    chargeChange(list, item) {
+      console.log(item.leader_uid);
+    },
+    delTask() {
+      this.$refs.listtwo.delTask();
+    },
+    addTask(item, place) {
+      this.$refs.listtwo.addTask(item, place);
+    }
+  }
 };
 </script> 

@@ -1,7 +1,8 @@
 <style scoped lang='less'>
 .task-select {
-  position: relative;
-  width: 65px;
+  position: fixed;
+  z-index: 99999;
+  width: 240px;
 }
 .task-select .clearFix:after {
   display: block;
@@ -24,8 +25,6 @@
   font-size: 12px;
   line-height: 30px;
   box-shadow: rgba(0, 0, 0, 0.3) 0px 2px 3px;
-  position: fixed;
-  z-index: 99999;
 }
 .task-select .dropdown .search input {
   width: 100%;
@@ -132,8 +131,8 @@
 }
 </style>
 <template>
-  <div class="task-select" v-clickoutside="changeOff">
-    <div class="dropdown" v-show="searchListShow" v-el:drop>
+  <div class="task-select">
+    <div class="dropdown">
       <div class="search">
         <input type="text" placeholder="搜索....." v-model="searchValue" />
       </div>
@@ -162,26 +161,16 @@
 </template>
 <script>
 import VueEvent from "../model/VueEvent.js";
-import clickoutside from "../../directives/clickoutside.js";
 export default {
   name: "charge",
   props: {
     members: {},
-    listItem: {},
-    mainid:{},
-    searchListShow:{
-      default:false
-    }
-  },
-  directives: {
-    clickoutside
+    mainid: {}
   },
   data() {
     return {
-      nickNameList: [],
-      memberSelected: "",
       showItems: [],
-      searchValue: "",
+      searchValue: ""
     };
   },
   ready() {
@@ -189,51 +178,11 @@ export default {
     this.showItems = this.members;
   },
   methods: {
-    changeOff: function() {
-      this.searchListShow = false;
-      this.$els.drop.display ='none';
-    },
-    dropdownShow: function() {
-      this.searchListShow = true;
-      var winHeight = 0;
-      var winWidth = 0;
-      var drop = this.$els.drop;
-      drop.style.display ='block';
-      var showName = this.$els.showname;
-      var showTop = showName.getBoundingClientRect().top;
-      var showLeft = showName.getBoundingClientRect().left;
-      var showHeight = showName.clientHeight;
-      var dropHeight = drop.clientHeight;
-      var dropWidth = drop.clientWidth;
-      if (window.innerHeight) {
-        winHeight = window.innerHeight;
-      } else if (document.body && document.body.clientHeight) {
-        winHeight = document.body.clientHeight;
-      }
-      if (window.innerWidth) {
-        winWidth = window.innerWidth;
-      } else if (document.body && document.body.clientWidth) {
-        winWidth = document.body.clientWidth;
-      }
-      if (winHeight - showTop - showHeight < dropHeight && showTop - 30 > dropHeight) {
-        drop.style.top = showTop - dropHeight + "px";
-      } else {
-        drop.style.top = showTop + showHeight + "px";
-      }
-      if(winWidth-showLeft<dropWidth){
-        drop.style.left = winWidth - dropWidth - 18 +'px';
-      }else if(showLeft<dropWidth){
-        drop.style.left ="10px";
-      }else{
-        drop.style.left = showLeft + "px";
-      }
-    },
     // 选中负责人的时候触发事件
     selectThis: function(item) {
       // 单选点击的事件，把需要的值传过去
-      this.memberSelected = item.nickname;
-      this.changeOff();
-      VueEvent.$emit("charge-change_"+this.mainid, this.listItem, item);
+      this.searchValue='';
+      VueEvent.$emit("charge-change_" + this.mainid, item);
     }
   },
   watch: {
@@ -252,10 +201,7 @@ export default {
       }
       this.showItems = arr;
     },
-    searchListShow: function() {
-      this.searchValue = "";
-    },
-    members:function(){
+    members: function() {
       this.showItems = this.members;
     }
   }

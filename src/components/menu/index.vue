@@ -42,6 +42,7 @@
     top: 0;
     left: 50px;
     right: 0;
+    height: 100%;
   }
     .left{
       display: flex;
