@@ -7,7 +7,18 @@
     <button @click="addTask(addItem,1)">添加同级数据</button>
     <button @click="addTask(addItem,0)">添加子级数据</button>
     <button @click="delTask">删除数据</button>
-    <button @click='changeTask'>更改数据</button>
+    <button @click="changeTask">更改数据</button>
+    <br />
+    <button @click="taskListSortControl('create_uid')">创建人排序</button>
+    <button @click="taskListSortControl('complete_uid')">完成人排序</button>
+    <button @click="taskListSortControl('leader_uid')">负责人排序</button>
+    <button @click="taskListSortControl('create_time')">创建时间排序</button>
+    <button @click="taskListSortControl('deadline')">截止时间排序</button>
+    <button @click="taskListSortControl('finish_time')">完成时间排序</button>
+    <button @click="taskListSortControl('status')">完成状态排序</button>
+    <button @click="taskListSortControl('priority','unone')">优先级排序</button>
+    <input type="text" v-model="filters">
+    <button @click='filtersValue'>过滤</button>
     <task-list-two
       v-ref:listTwo
       :task="task"
@@ -23,13 +34,14 @@
       @check-change_qwertyuiop="changeDone"
       @title-change_qwertyuiop="changeTitle"
       @charge-change_qwertyuiop="chargeChange"
+      @loaded-change_qwertyuiop="loadedChange"
     ></task-list-two>
   </div>
 </template>
 <script>
 import Vue from "Vue";
 import list from "../../assets/tasklist.js";
-import list2 from '../../assets/tasklist2.js'
+import list2 from "../../assets/tasklist2.js";
 export default {
   data() {
     return {
@@ -40,10 +52,10 @@ export default {
       timeStamp: 0,
       // timeStamp: 1566273596425,
       members: [
-        { nickname: "1望京", mobile: 123, user_id: 1 },
-        { nickname: "2朝阳门", mobile: 234, user_id: 2 },
-        { nickname: "3大望路", mobile: 345, user_id: 3 },
-        { nickname: "4西直门", mobile: 456, user_id: 4 }
+        { nickname: "1望京", mobile: 123, user_id: '593e44b855a86260805ba046' },
+        { nickname: "2朝阳门", mobile: 234, user_id: '593e44b855a86260805ba047' },
+        { nickname: "3大望路", mobile: 345, user_id: '593e44b855a86260805ba048' },
+        { nickname: "4西直门", mobile: 456, user_id: "5a9f4ae9cca7de17b7bb7596" }
       ],
       // 选中的任务
       selectItem: {},
@@ -85,15 +97,16 @@ export default {
           "5d53e0e313c5491b655c5024/5d53e0e313c5491b655c5025/5d53eabd7b846b3ff53dbe69/5d53eabd7b846b3ff53dbe77/5d53eba9571c63432db594c2",
         __v: 0,
         complete_uid: "593e44b855a86260805ba046"
-      }
+      },
+      filters:''
     };
   },
   ready() {},
   methods: {
     // v2
-    changeTask(){
-      this.timeStamp=123;
-      this.task=list2;
+    changeTask() {
+      this.timeStamp = 123;
+      this.task = list2;
     },
     selectId() {
       this.$refs.listtwo.selectId("5d53eabd7b846b3ff53dbe69");
@@ -121,13 +134,22 @@ export default {
       console.log(item.task_name);
     },
     chargeChange(list, item) {
-      console.log(item.leader_uid);
+      console.log(list,item);
+    },
+    loadedChange(){
+      // console.log(123)
     },
     delTask() {
       this.$refs.listtwo.delTask();
     },
-    addTask(item, place) {
-      this.$refs.listtwo.addTask(item, place);
+    addTask(item) {
+      this.$refs.listtwo.addTask(item);
+    },
+    taskListSortControl(type,fil) {
+      this.$refs.listtwo.taskListSortControl(type,fil);
+    },
+    filtersValue(){
+      console.log(this.$refs.listtwo.filterValue(this.filters));
     }
   }
 };

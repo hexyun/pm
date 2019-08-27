@@ -37,7 +37,7 @@
 
       .rank {
         font-size: 9px;
-        // margin-left: 9px;
+        text-indent: 0.5rem;
         color: #999999;
       }
       .open {
@@ -76,6 +76,7 @@
           color: rgba(0, 0, 0, 0);
           border-radius: 3px;
           margin: auto;
+          margin-right: 5px;
           vertical-align: middle;
           font-size: 14px;
         }
@@ -92,6 +93,41 @@
         .leader {
           color: #666666;
         }
+      }
+      .label {
+        width: 50%;
+        margin-left: -16px;
+        background: #999;
+        color: #fff;
+        border-radius: 0 4px 4px 0;
+        font-size: 16px;
+        padding-left: 10px;
+        div {
+          float: left;
+        }
+      }
+      .priority {
+        width: 20px;
+        height: 20px;
+        line-height: 20px;
+        text-align: center;
+        color: rgba(0, 0, 0, 0);
+        border-radius: 3px;
+        margin: auto;
+        margin-right: 5px;
+        vertical-align: middle;
+        font-size: 14px;
+        margin: 5px;
+      }
+      .wary {
+        color: black;
+      }
+      .warning {
+        color: red;
+      }
+      .error {
+        color: #fff;
+        background: red;
       }
     }
     .done {
@@ -131,9 +167,6 @@
   background: #a0a0a0;
   border-radius: 3px;
 }
-.dropDown {
-  display: none;
-}
 </style> 
 
 <template>
@@ -144,38 +177,51 @@
           v-for="(index , listItem) in visibleData"
           track-by="$index"
           class="list-item"
-          :class="{'done':listItem.finish_time,'selected':selectItem._id==listItem._id}"
+          :class="{'done':listItem.finish_time,'selected':selectItem._id==listItem._id&&listItem.type!=='label'}"
           :key="index"
           @click="selectThis(listItem)"
         >
-          <!-- visibleData -->
-          <div class="itemIndex" v-if="isol">{{listItem.ind}}</div>
-          <div class="checkbox" @click="changeDone(listItem)"></div>
-          <div class="rank" v-if="islabel" style="visibility:hidden">{{listItem.positionInd}}</div>
-          <div class="rank" v-if="islabel" style="visibility:hidden">{{listItem.positionInd}}</div>
-          <div class="rank" v-if="islabel">{{listItem.positionInd}}</div>
-          <!-- <div class="open">{{listItem.hasChildren?listItem.isOpen?'-':'+':''}}</div> -->
-          <div class="title">
-            <input
-              type="text"
-              v-model="listItem.task_name"
-              :readonly="!isTitleChange"
-              @focus="savePreTitle(listItem.task_name)"
-              @blur="changeTitle(listItem)"
-            />
-          </div>
-          <div class="right">
+          <div v-if="listItem.type=='label'" class="label">
+            <div>{{listItem.text}}</div>
             <div
-              class="time"
-              v-if="!listItem.finish_time && listItem.deadline"
-              :class="{'over':listItem.deadline<new Date().getTime()}"
-            >{{listItem.deadline|totime}}</div>
-            <div
+              v-if="listItem.priority"
               class="priority"
               :class="{'wary':listItem.priority==2,'warning':listItem.priority ==3,'error':listItem.priority==4}"
             >★</div>
-            <div class="leader" @click="changeLeader(listItem)">{{listItem.leader_uid|toNickName}}</div>
+            <div>{{listItem.num}}</div>
           </div>
+          <template v-if="listItem.type!=='label'">
+            <!-- visibleData -->
+            <div class="itemIndex" v-if="isol">{{listItem.ind}}</div>
+            <div class="checkbox" @click="changeDone(listItem)"></div>
+            <div
+              class="rank"
+              v-if="islabel"
+              :style="{'text-indent':listItem.positionInd.split('.').length*0.8+'rem'}"
+            >{{listItem.positionInd}}</div>
+            <!-- <div class="open">{{listItem.hasChildren?listItem.isOpen?'-':'+':''}}</div> -->
+            <div class="title">
+              <input
+                type="text"
+                v-model="listItem.task_name"
+                :readonly="!isTitleChange"
+                @focus="savePreTitle(listItem.task_name)"
+                @blur="changeTitle(listItem)"
+              />
+            </div>
+            <div class="right">
+              <div
+                class="time"
+                v-if="!listItem.finish_time && listItem.deadline"
+                :class="{'over':listItem.deadline<new Date().getTime()}"
+              >{{listItem.deadline|totime}}</div>
+              <div
+                class="priority"
+                :class="{'wary':listItem.priority==2,'warning':listItem.priority ==3,'error':listItem.priority==4}"
+              >★</div>
+              <div class="leader" @click="changeLeader(listItem)">{{listItem.leader_uid|toNickName}}</div>
+            </div>
+          </template>
         </li>
       </ul>
       <charge-two
@@ -227,7 +273,9 @@ export default {
       searchListShow: false,
       selectXY: { left: 0, top: 0 },
       preTitle: "",
-      mergedData: []
+      mergedData: [],
+      mergedDataCopy: [],
+      dataType: ""
     };
   },
   filters: {
@@ -252,7 +300,13 @@ export default {
     },
     // 转换nickname
     toNickName: function(id) {
-      const nick = this.members.find(item => item.user_id == id);
+      const nick = this.members.find(item => {
+        if (item.user_id && item.user_id == id) {
+          return true;
+        } else {
+          return false;
+        }
+      });
       return nick ? nick.nickname : "请选择";
     }
   },
@@ -268,7 +322,7 @@ export default {
   },
   watch: {
     task: function() {
-      console.log('tasklistv2task更改成功')
+      console.log("tasklistv2task更改成功");
       this.mergeData();
       this.updateVisibleData();
     }
@@ -276,15 +330,15 @@ export default {
   methods: {
     // 增加任务
     addTask(addItem) {
-      if(this.changeGetItem(addItem._id)){
-        console.log('tasklistv2重复id')
-      }else{
+      if (this.changeGetItem(addItem._id)) {
+        console.log("tasklistv2重复id");
+      } else {
         // 添加数据
         this.mergedData.push(addItem);
         // 排序数据
         this.mergedData = this.taskListSort(this.mergedData);
         // 更改选中
-        this.selectItem = addItem;
+        this.selectThis(addItem)
         // 更改滚动
         this.scrollTo(addItem._id);
         // 重新截取
@@ -302,7 +356,7 @@ export default {
         targetId = this.selectItem._id;
       }
       // 找到fatherid
-      if (this.changeGetItem(targetId)){
+      if (this.changeGetItem(targetId)) {
         // 获得fatherid,第一级的id是undefined
         father = this.changeGetItem(targetId)[0].father_id || undefined;
         // 判断fatherid下面有几个子集
@@ -359,17 +413,17 @@ export default {
         }
       });
       // 赋值下个选中的项目和滚动
-      this.selectItem = next;
-      // this.scrollTo(next._id);
+      this.selectThis(next)
+      this.scrollTo(next._id);
     },
     // 合并数据
     mergeData() {
       // 创建一个空数组
-      var list=this.task;
+      var list = this.task;
       var arr = [];
       // 如果有时间戳
       if (this.timeStamp) {
-        console.log('tasklistv2数据合并')
+        console.log("tasklistv2数据合并");
         // 获取本地存储
         arr = memory.get("hex_" + this.listId);
         // 遍历新增数据
@@ -400,12 +454,13 @@ export default {
         }
         this.mergedData = arr;
       } else {
-        console.log('tasklistv2数据覆盖')
+        console.log("tasklistv2数据覆盖");
         this.mergedData = list;
       }
       // 排序
       this.mergedData = this.taskListSort(this.mergedData);
-      console.log('tasklistv2数据合并覆盖成功')
+      this.mergedDataCopy = this.deepCopy(this.mergedData);
+      console.log("tasklistv2数据合并覆盖成功");
       // 存缓存
       this.setMemory();
       // 更新界面
@@ -415,53 +470,274 @@ export default {
         this.$els.tasklisttwo.scrollBy(0, -1);
       }
     },
+    //排序接口
+    taskListSortControl(type, fil) {
+      this.mergedData = this.taskListSort(this.mergedDataCopy, type, fil);
+      this.$els.tasklisttwo.scrollTo(0, 1);
+      this.handleScroll();
+    },
     // 排序事件
-    taskListSort(list) {
+    taskListSort(list, type, fil) {
+      this.islabel = false;
+      this.isol = false;
       // 创建一个空数组用来储存结果
       var arr = [];
-      const getChildren = (list, k, v, positionInd) => {
-        // 找到fatherid是这个id的任务
-        const children = list.filter(item => {
-          if (item[k] && v._id) {
-            return item[k] + "" === v._id + "";
+      this.dataType = type;
+      if (fil == "done") {
+        var done = [];
+        list.forEach((item, index) => {
+          if (item.finish_time) {
+            done.push(item);
           }
-          return item[k] === v._id;
         });
-        // 如果有子任务
-        if (children.length) {
-          v.hasChildren = true;
-          v.isOpen = true;
-          children.map((item, index) => {
-            // 拼接序列号
-            item.positionInd = positionInd + "." + (index + 1);
-            arr.push(item);
-            getChildren(list, k, item, item.positionInd);
+        list = done;
+      } else if (fil == "undone") {
+        var undone = [];
+        list.forEach((item, index) => {
+          if (!item.finish_time) {
+            undone.push(item);
+          }
+        });
+        list = undone;
+      }
+      // type默认是正常排序.
+      switch (type) {
+        case "create_uid":
+          arr = this.sortData(list, "create_uid");
+          arr = this.sortDataNickName(arr, "create_uid", "创建人以移除");
+          break;
+        case "complete_uid":
+          arr = this.sortData(list, "complete_uid");
+          arr = this.sortDataNickName(arr, "complete_uid", "没有完成人的任务");
+          break;
+        case "leader_uid":
+          arr = this.sortData(list, "leader_uid");
+          arr = this.sortDataNickName(arr, "leader_uid", "没有负责人的任务");
+          break;
+        case "create_time":
+          arr = this.sortData(list, "create_time");
+          arr = this.sortDataTime(arr, "create_time", "没有创建日期的任务");
+          break;
+        case "deadline":
+          arr = this.sortData(list, "deadline");
+          arr = this.sortDataTime(arr, "deadline", "没有截止日期的任务");
+          break;
+        case "finish_time":
+          arr = this.sortData(list, "finish_time");
+          arr = this.sortDataTime(arr, "finish_time", "没有完成日期的任务");
+          break;
+        case "status":
+          var done = [{ type: "label", text: "完成的任务", num: "" }];
+          var undone = [{ type: "label", text: "未完成的任务", num: "" }];
+          list.forEach((item, index) => {
+            if (item.finish_time) {
+              done.push(item);
+            } else {
+              undone.push(item);
+            }
           });
-        } else {
-          // 如果没有赋值没有子任务
-          v.hasChildren = false;
-        }
-        return arr;
-      };
-      // 存储第一级任务
-      var listOne = [];
+          done[0].num = "（" + (done.length - 1) + "）个";
+          undone[0].num = "（" + (undone.length - 1) + "）个";
+          undone.length > 1 ? (arr = arr.concat(undone)) : null;
+          done.length > 1 ? (arr = arr.concat(done)) : null;
+          break;
+        case "priority":
+          var priority1 = [
+            { type: "label", text: "优先级:普通", num: "", priority: 1 }
+          ];
+          var priority2 = [
+            { type: "label", text: "优先级:重要", num: "", priority: 2 }
+          ];
+          var priority3 = [
+            { type: "label", text: "优先级:紧急", num: "", priority: 3 }
+          ];
+          var priority4 = [
+            { type: "label", text: "优先级:重要紧急", num: "", priority: 4 }
+          ];
+          list.forEach((item, index) => {
+            switch (item.priority) {
+              case 1:
+                priority1.push(item);
+                break;
+              case 2:
+                priority2.push(item);
+                break;
+              case 3:
+                priority3.push(item);
+                break;
+              default:
+                priority4.push(item);
+                break;
+            }
+          });
+          priority1[0].num = "（" + (priority1.length - 1) + "）个";
+          priority2[0].num = "（" + (priority2.length - 1) + "）个";
+          priority3[0].num = "（" + (priority3.length - 1) + "）个";
+          priority4[0].num = "（" + (priority4.length - 1) + "）个";
+          priority4.length > 1 ? (arr = arr.concat(priority4)) : null;
+          priority3.length > 1 ? (arr = arr.concat(priority3)) : null;
+          priority2.length > 1 ? (arr = arr.concat(priority2)) : null;
+          priority1.length > 1 ? (arr = arr.concat(priority1)) : null;
+          break;
+        default:
+          this.islabel = true;
+          this.isol = true;
+          const getChildren = (list, k, v, positionInd) => {
+            // 找到fatherid是这个id的任务
+            const children = list.filter(item => {
+              if (item[k] && v._id) {
+                return item[k] + "" === v._id + "";
+              }
+              return item[k] === v._id;
+            });
+            // 如果有子任务
+            if (children.length) {
+              v.hasChildren = true;
+              v.isOpen = true;
+              children.map((item, index) => {
+                // 拼接序列号
+                item.positionInd = positionInd + "." + (index + 1);
+                arr.push(item);
+                getChildren(list, k, item, item.positionInd);
+              });
+            } else {
+              // 如果没有赋值没有子任务
+              v.hasChildren = false;
+            }
+            return arr;
+          };
+          // 存储第一级任务
+          var listOne = [];
+          for (let i = 0; i < list.length; i++) {
+            if (!list[i].father_id) {
+              listOne.push(list[i]);
+            }
+          }
+          // 遍历第一级任务，并获取所有子集任务
+          for (let i = 0; i < listOne.length; i++) {
+            // 赋值序列号
+            listOne[i].positionInd = i + 1;
+            arr.push(listOne[i]);
+            // 遍历获取子任务
+            getChildren(list, "father_id", listOne[i], i + 1);
+          }
+          // 赋值任务序号
+          for (let i = 0; i < arr.length; i++) {
+            arr[i].ind = i + 1;
+          }
+          break;
+      }
+      return arr;
+    },
+    sortData(list, key) {
+      var none = "none";
+      if (key == "create_time" || key == "deadline" || key == "finish_time") {
+        none = false;
+      }
       for (let i = 0; i < list.length; i++) {
-        if (!list[i].father_id) {
-          listOne.push(list[i]);
+        if (!list[i][key]) {
+          list[i][key] = none;
+        }
+        for (let j = i + 1; j < list.length; j++) {
+          if (!list[j][key]) {
+            list[j][key] = none;
+          }
+          var temp = {};
+          if (list[i][key] < list[j][key]) {
+            temp = list[j];
+            list[j] = list[i];
+            list[i] = temp;
+          }
         }
       }
-      // 遍历第一级任务，并获取所有子集任务
-      for (let i = 0; i < listOne.length; i++) {
-        // 赋值序列号
-        listOne[i].positionInd = i + 1;
-        arr.push(listOne[i]);
-        // 遍历获取子任务
-        getChildren(list, "father_id", listOne[i], i + 1);
+      for (let i = 0; i < list.length; i++) {
+        console.log(list[i][key]);
       }
-      // 赋值任务序号
-      for (let i = 0; i < arr.length; i++) {
-        arr[i].ind = i + 1;
-      }
+      return list;
+    },
+    sortDataNickName(list, type, noneTitle) {
+      var nickname = {};
+      var target = [];
+      list.forEach(item => {
+        // 遍历列表
+        var hasNickName = this.members.find(people => {
+          // 找到有没有id对应的昵称
+          return people.user_id == item[type];
+        });
+        // 有的话nickname等于昵称，没有的话等于none
+        if (hasNickName) {
+          Vue.set(item, "nickname", hasNickName.nickname);
+        } else {
+          Vue.set(item, "nickname", "none");
+        }
+        // 查看昵称列表有没有这个
+        if (!nickname[item.nickname]) {
+          Vue.set(nickname, item.nickname, [item]);
+        } else {
+          nickname[item.nickname].push(item);
+        }
+      });
+      // 遍历昵称列表拼接
+      Object.keys(nickname).forEach(item => {
+        var name = item;
+        if (name == "none" || name == 0) {
+          name = noneTitle;
+        }
+        var names = [
+          {
+            type: "label",
+            text: name,
+            num: "（" + nickname[item].length + "）个"
+          }
+        ];
+        target = target.concat(names);
+        target = target.concat(nickname[item]);
+      });
+      return target;
+    },
+    sortDataTime(list, type, noneTitle) {
+      var target = [];
+      var times = [];
+      list.forEach(item => {
+        if (item[type]) {
+          Vue.set(item, "time", this.sortToTime(item[type]));
+        } else {
+          Vue.set(item, "time", "none");
+        }
+
+        if (!times[item.time]) {
+          Vue.set(times, item.time, [item]);
+        } else {
+          times[item.time].push(item);
+        }
+      });
+      Object.keys(times).forEach(item => {
+        var name = item;
+        if (name == "none" || name == 0) {
+          name = noneTitle;
+        }
+        var names = [
+          {
+            type: "label",
+            text: name,
+            num: "（" + times[item].length + "）个"
+          }
+        ];
+        target = target.concat(names);
+        target = target.concat(times[item]);
+      });
+      return target;
+    },
+    sortToTime(time) {
+      return new Date(time).toJSON().substr(0, 10);
+    },
+    //过滤事件
+    filterValue(val){
+      var arr=this.mergedData.filter(item=>{
+        if(item.task_name.indexOf(val)!==-1){
+          return true;
+        }
+      })
       return arr;
     },
     // 操作缓存
@@ -469,7 +745,7 @@ export default {
       // 把数据存入缓存
       memory.set("hex_" + this.listId, this.mergedData);
       // 如果缓存满了，给个提示
-      console.log('tasklistv2存入缓存')
+      console.log("tasklistv2存入缓存");
       if (!memory.set("hex_" + this.listId, this.mergedData)) {
         console.log("tasklistv2缓存已经满了，请重新加载");
       }
@@ -483,7 +759,7 @@ export default {
           if (taskSlist.length < 5) {
             taskSlist.push(this.listId);
             memory.set("taskSlist", taskSlist);
-            console.log('tasklistv2更新缓存字典成功')
+            console.log("tasklistv2更新缓存字典成功");
           } else {
             // 如果超过了，删除第一个
             let a = taskSlist[0];
@@ -491,13 +767,13 @@ export default {
             taskSlist.shift();
             memory.remove("hex_" + a);
             memory.set("taskSlist", taskSlist);
-            console.log('tasklistv2替换缓存字典成功')
+            console.log("tasklistv2替换缓存字典成功");
           }
         }
       } else {
         // 如果没有，创建字典
         memory.set("taskSlist", [this.listId]);
-        console.log('tasklistv2创建缓存字典成功')
+        console.log("tasklistv2创建缓存字典成功");
       }
     },
     // 深拷贝
@@ -552,9 +828,13 @@ export default {
           return true;
         }
       });
-      if(tar.length!==1){
-        console.log('tasklistv2一共找到了'+tar.length+'条相同id的数据，请确认数据是否正确')
-      };
+      if (tar.length !== 1) {
+        console.log(
+          "tasklistv2一共找到了" +
+            tar.length +
+            "条相同id的数据，请确认数据是否正确"
+        );
+      }
       return tar && tar.length == 1
         ? [tar[0], ind, this.mergedData]
         : undefined;
@@ -562,7 +842,7 @@ export default {
     // 选中指定id
     selectId(id) {
       var a = this.changeGetItem(id);
-      if(a){
+      if (a) {
         this.selectItem = a[0];
       }
     },
@@ -583,9 +863,9 @@ export default {
     changeDone(item) {
       var self = this;
       if (item.finish_time) {
-        item.finish_time = null;
+        Vue.set(item, "finish_time", null);
       } else {
-        item.finish_time = new Date().getTime();
+        Vue.set(item, "finish_time", new Date().getTime());
       }
       this.$emit("check-change_" + self.mainid, this.mergedData, item);
     },
@@ -602,10 +882,12 @@ export default {
     },
     // 负责人下拉框展示
     changeLeader(item) {
+      console.log(123);
       var target = event.path[0];
       var el = this.$els.dropdown;
       el.style.visibility = "visible";
       el.style.display = "block";
+      this.searchListShow = true;
       var targetTop = target.getBoundingClientRect().top;
       var targetLeft = target.getBoundingClientRect().left;
       var targetWidth = target.offsetWidth;
@@ -624,7 +906,6 @@ export default {
       elY > screenHeight - elHeight ? (elY = screenHeight - elHeight) : null;
       Vue.set(this.selectXY, "left", elX + "px");
       Vue.set(this.selectXY, "top", elY + "px");
-      this.searchListShow = true;
     },
     // 负责人下拉框关闭
     changeOff() {
@@ -640,16 +921,13 @@ export default {
     Vue.nextTick(function() {
       self.mergeData();
       self.updateVisibleData();
+      self.$emit("loaded-change_" + self.mainid);
     });
     // 负责人更改
     VueEvent.$on("charge-change_" + self.mainid, function(item) {
-      self.selectItem.leader_uid = item.user_id;
+      Vue.set(self.selectItem, "leader_uid", item.user_id);
       self.searchListShow = false;
-      self.$emit(
-        "charge-change_" + self.mainid,
-        self.mergedData,
-        self.selectItem
-      );
+      self.$emit("charge-change_" + self.mainid, self.selectItem, item);
     });
   }
 };
