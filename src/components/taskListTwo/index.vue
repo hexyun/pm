@@ -325,6 +325,7 @@ export default {
       console.log("tasklistv2task更改成功");
       this.mergeData();
       this.updateVisibleData();
+      this.$emit("loaded-change_" + this.mainid);
     }
   },
   methods: {

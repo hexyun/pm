@@ -137,7 +137,7 @@ export default {
       console.log(list,item);
     },
     loadedChange(){
-      // console.log(123)
+      console.log(123)
     },
     delTask() {
       this.$refs.listtwo.delTask();
