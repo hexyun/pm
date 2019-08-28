@@ -827,7 +827,7 @@ export default {
     //过滤事件
     filterValue(val) {
       var arr = this.mergedData.filter(item => {
-        if (item.task_name.indexOf(val) !== -1) {
+        if (item.task_name&&item.task_name.indexOf(val) !== -1) {
           return true;
         }
       });
