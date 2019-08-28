@@ -16,7 +16,8 @@
     <button @click="taskListSortControl('deadline')">截止时间排序</button>
     <button @click="taskListSortControl('finish_time')">完成时间排序</button>
     <button @click="taskListSortControl('status')">完成状态排序</button>
-    <button @click="taskListSortControl('priority','unone')">优先级排序</button>
+    <button @click="taskListSortControl('priority','undone')">优先级排序</button>
+    <button @click="taskListSortControl()">默认排序</button>
     <input type="text" v-model="filters">
     <button @click='filtersValue'>过滤</button>
     <task-list-two

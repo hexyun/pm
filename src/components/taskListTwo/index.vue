@@ -282,7 +282,9 @@ export default {
     // 转换剩余时间
     totime: function(val) {
       var leftTime, d, h, m, s, times;
+      //获取时间差
       leftTime = val - new Date().getTime();
+      // 判断时间差
       if (leftTime >= 0) {
         d = Math.floor(leftTime / 1000 / 60 / 60 / 24);
         h = Math.floor((leftTime / 1000 / 60 / 60) % 24);
@@ -300,6 +302,7 @@ export default {
     },
     // 转换nickname
     toNickName: function(id) {
+      // 遍历人员列表，查找匹配项
       const nick = this.members.find(item => {
         if (item.user_id && item.user_id == id) {
           return true;
@@ -307,12 +310,14 @@ export default {
           return false;
         }
       });
+      // 如果没有匹配项，等于请选择
       return nick ? nick.nickname : "请选择";
     }
   },
   computed: {
     // 动态计算包裹滚动元素高度
     contentHeight: function() {
+      // 第一次执行一遍切割展示函数，防止卡顿造成的空白
       if (this.onoff) {
         this.updateVisibleData();
         this.onoff = false;
@@ -322,6 +327,7 @@ export default {
   },
   watch: {
     task: function() {
+      // 每次task改变的时候动态合并数据，同时更新一下视图防止卡顿，触发加载完成事件
       console.log("tasklistv2task更改成功");
       this.mergeData();
       this.updateVisibleData();
@@ -329,150 +335,23 @@ export default {
     }
   },
   methods: {
-    // 增加任务
-    addTask(addItem) {
-      if (this.changeGetItem(addItem._id)) {
-        console.log("tasklistv2重复id");
-      } else {
-        // 添加数据
-        this.mergedData.push(addItem);
-        // 排序数据
-        this.mergedData = this.taskListSort(this.mergedData);
-        // 更改选中
-        this.selectThis(addItem)
-        // 更改滚动
-        this.scrollTo(addItem._id);
-        // 重新截取
-        this.handleScroll();
-      }
-    },
-    // 删除任务
-    delTask(id) {
-      var targetId = id;
-      var father = "";
-      var next = {};
-      // 是否传了id
-      if (!targetId) {
-        // 没指定id，操作当前选中项目
-        targetId = this.selectItem._id;
-      }
-      // 找到fatherid
-      if (this.changeGetItem(targetId)) {
-        // 获得fatherid,第一级的id是undefined
-        father = this.changeGetItem(targetId)[0].father_id || undefined;
-        // 判断fatherid下面有几个子集
-        var brother = this.mergedData.filter((item, index) => {
-          if (item.father_id == father) {
-            return true;
-          }
-          return false;
-        });
-        // 如果大于一个，next等于上一个子集
-        if (brother.length > 1) {
-          // 判断上一个是谁
-          brother.filter((item, index) => {
-            // 在兄弟数组中找到这个
-            if (item._id == targetId) {
-              // 判断是不是第一个
-              if (index == 0) {
-                // 是的话下一个就是现在的第二个
-                next = brother[1];
-              } else {
-                // 不是的话下一个就是现在的上一个
-                next = brother[index - 1];
-              }
-            }
-          });
-        } else {
-          // 如果没有兄弟
-          // 如果能找到fatherid对应的
-          if (this.changeGetItem(father)) {
-            // 下一个就是fatherid对应的
-            next = this.changeGetItem(father)[0];
+     // 深拷贝
+    deepCopy(obj) {
+      var result = Array.isArray(obj) ? [] : {};
+      for (var key in obj) {
+        if (obj.hasOwnProperty(key)) {
+          if (typeof obj[key] === "object" && obj[key] !== null) {
+            result[key] = this.deepCopy(obj[key]);
           } else {
-            // 否则下一个是空,可能是删光了或者数据错误
-            next = {};
-            console.log("tasklistv2没有找到同级或者父级任务");
+            result[key] = obj[key];
           }
         }
       }
-      // 切掉数据
-      this.mergedData.filter((item, index) => {
-        if (item._id == targetId) {
-          // 找到并切掉对应的
-          this.mergedData.splice(index, 1);
-          // 重新排序
-          this.mergedData = this.taskListSort(this.mergedData);
-          // 更新截取数据
-          this.updateVisibleData();
-          // 滚动一下滚动条触发截取事件
-          if (this.$els.tasklisttwo.scrollTop == 0) {
-            this.$els.tasklisttwo.scrollBy(0, 1);
-          } else {
-            this.$els.tasklisttwo.scrollBy(0, -1);
-          }
-        }
-      });
-      // 赋值下个选中的项目和滚动
-      this.selectThis(next)
-      this.scrollTo(next._id);
-    },
-    // 合并数据
-    mergeData() {
-      // 创建一个空数组
-      var list = this.task;
-      var arr = [];
-      // 如果有时间戳
-      if (this.timeStamp) {
-        console.log("tasklistv2数据合并");
-        // 获取本地存储
-        arr = memory.get("hex_" + this.listId);
-        // 遍历新增数据
-        for (let i = 0; i < list.length; i++) {
-          // 遍历渲染数组，查找有没有同一条数据的id
-          var target = arr.filter((item, index) => {
-            if (list[i]._id == item._id) {
-              // 如果removed，是删除的数据
-              if (list[i].removed > 0) {
-                arr.splice(index, 1);
-              } else {
-                // 如果没有removed，是修改的
-                arr.splice(index, 1, list[i]);
-              }
-              return true;
-            } else {
-              return false;
-            }
-          });
-          // 如果没有的话，证明是新添加的数据
-          if (!target || !target.length) {
-            arr.forEach((item, index) => {
-              if (item._id == list[i].father_id) {
-                arr.insert(index + 1, list[i]);
-              }
-            });
-          }
-        }
-        this.mergedData = arr;
-      } else {
-        console.log("tasklistv2数据覆盖");
-        this.mergedData = list;
-      }
-      // 排序
-      this.mergedData = this.taskListSort(this.mergedData);
-      this.mergedDataCopy = this.deepCopy(this.mergedData);
-      console.log("tasklistv2数据合并覆盖成功");
-      // 存缓存
-      this.setMemory();
-      // 更新界面
-      if (this.$els.tasklisttwo.scrollTop == 0) {
-        this.$els.tasklisttwo.scrollBy(0, 1);
-      } else {
-        this.$els.tasklisttwo.scrollBy(0, -1);
-      }
+      return result;
     },
     //排序接口
     taskListSortControl(type, fil) {
+      // 排序数据，回复滚动条
       this.mergedData = this.taskListSort(this.mergedDataCopy, type, fil);
       this.$els.tasklisttwo.scrollTo(0, 1);
       this.handleScroll();
@@ -732,14 +611,59 @@ export default {
     sortToTime(time) {
       return new Date(time).toJSON().substr(0, 10);
     },
-    //过滤事件
-    filterValue(val){
-      var arr=this.mergedData.filter(item=>{
-        if(item.task_name.indexOf(val)!==-1){
-          return true;
+        // 合并数据
+    mergeData() {
+      // 创建一个空数组
+      var list = this.task;
+      var arr = [];
+      // 如果有时间戳
+      if (this.timeStamp) {
+        console.log("tasklistv2数据合并");
+        // 获取本地存储
+        arr = memory.get("hex_" + this.listId);
+        // 遍历新增数据
+        for (let i = 0; i < list.length; i++) {
+          // 遍历渲染数组，查找有没有同一条数据的id
+          var target = arr.filter((item, index) => {
+            if (list[i]._id == item._id) {
+              // 如果removed，是删除的数据
+              if (list[i].removed > 0) {
+                arr.splice(index, 1);
+              } else {
+                // 如果没有removed，是修改的
+                arr.splice(index, 1, list[i]);
+              }
+              return true;
+            } else {
+              return false;
+            }
+          });
+          // 如果没有的话，证明是新添加的数据
+          if (!target || !target.length) {
+            arr.forEach((item, index) => {
+              if (item._id == list[i].father_id) {
+                arr.insert(index + 1, list[i]);
+              }
+            });
+          }
         }
-      })
-      return arr;
+        this.mergedData = arr;
+      } else {
+        console.log("tasklistv2数据覆盖");
+        this.mergedData = list;
+      }
+      // 排序
+      this.mergedData = this.taskListSort(this.mergedData);
+      this.mergedDataCopy = this.deepCopy(this.mergedData);
+      console.log("tasklistv2数据合并覆盖成功");
+      // 存缓存
+      this.setMemory();
+      // 更新界面
+      if (this.$els.tasklisttwo.scrollTop == 0) {
+        this.$els.tasklisttwo.scrollBy(0, 1);
+      } else {
+        this.$els.tasklisttwo.scrollBy(0, -1);
+      }
     },
     // 操作缓存
     setMemory() {
@@ -777,19 +701,130 @@ export default {
         console.log("tasklistv2创建缓存字典成功");
       }
     },
-    // 深拷贝
-    deepCopy(obj) {
-      var result = Array.isArray(obj) ? [] : {};
-      for (var key in obj) {
-        if (obj.hasOwnProperty(key)) {
-          if (typeof obj[key] === "object" && obj[key] !== null) {
-            result[key] = this.deepCopy(obj[key]);
+    // 获取指定id元素和更改指定id属性
+    changeGetItem(id, k, v) {
+      var ind = 0;
+      // 遍历查找合并后的数组
+      const tar = this.mergedData.filter((item, index) => {
+        if (item._id == id) {
+          if ((id, k, v)) {
+            Vue.set(item, k, v);
+          }
+          ind = index;
+          return true;
+        }
+      });
+      if (tar.length !== 1) {
+        console.log(
+          "tasklistv2一共找到了" +
+            tar.length +
+            "条相同id的数据，请确认数据是否正确"
+        );
+      }
+      return tar && tar.length == 1
+        ? [tar[0], ind, this.mergedData]
+        : undefined;
+    },
+    // 增加任务
+    addTask(addItem) {
+      var self=this;
+      //判断这个id是否重复
+      if (this.changeGetItem(addItem._id)) {
+        console.log("tasklistv2重复id");
+      } else {
+        // 添加数据
+        this.mergedData.push(addItem);
+        // 排序数据
+        this.mergedData = this.taskListSort(this.mergedData);
+        // 更改选中
+        this.selectThis(addItem)
+        // 延迟更改滚动，等到计算完成后
+        Vue.nextTick(function(){
+          self.scrollTo(addItem._id)
+          // 重新截取
+          self.updateVisibleData();
+        })
+      }
+    },
+    // 删除任务
+    delTask(id) {
+      var targetId = id;
+      var father = "";
+      var next = {};
+      // 是否传了id
+      if (!targetId) {
+        // 没指定id，操作当前选中项目
+        targetId = this.selectItem._id;
+      }
+      // 找到fatherid
+      if (this.changeGetItem(targetId)) {
+        // 获得fatherid,第一级的id是undefined
+        father = this.changeGetItem(targetId)[0].father_id || undefined;
+        // 判断fatherid下面有几个子集
+        var brother = this.mergedData.filter((item, index) => {
+          if (item.father_id == father) {
+            return true;
+          }
+          return false;
+        });
+        // 如果大于一个，next等于上一个子集
+        if (brother.length > 1) {
+          // 判断上一个是谁
+          brother.filter((item, index) => {
+            // 在兄弟数组中找到这个
+            if (item._id == targetId) {
+              // 判断是不是第一个
+              if (index == 0) {
+                // 是的话下一个就是现在的第二个
+                next = brother[1];
+              } else {
+                // 不是的话下一个就是现在的上一个
+                next = brother[index - 1];
+              }
+            }
+          });
+        } else {
+          // 如果没有兄弟
+          // 如果能找到fatherid对应的
+          if (this.changeGetItem(father)) {
+            // 下一个就是fatherid对应的
+            next = this.changeGetItem(father)[0];
           } else {
-            result[key] = obj[key];
+            // 否则下一个是空,可能是删光了或者数据错误
+            next = {};
+            console.log("tasklistv2没有找到同级或者父级任务");
           }
         }
       }
-      return result;
+      // 切掉数据
+      this.mergedData.filter((item, index) => {
+        if (item._id == targetId) {
+          // 找到并切掉对应的
+          this.mergedData.splice(index, 1);
+          // 重新排序
+          this.mergedData = this.taskListSort(this.mergedData);
+          // 更新截取数据
+          this.updateVisibleData();
+          // 滚动一下滚动条触发截取事件
+          if (this.$els.tasklisttwo.scrollTop == 0) {
+            this.$els.tasklisttwo.scrollBy(0, 1);
+          } else {
+            this.$els.tasklisttwo.scrollBy(0, -1);
+          }
+        }
+      });
+      // 赋值下个选中的项目和滚动
+      this.selectThis(next)
+      this.scrollTo(next._id);
+    },
+    //过滤事件
+    filterValue(val){
+      var arr=this.mergedData.filter(item=>{
+        if(item.task_name.indexOf(val)!==-1){
+          return true;
+        }
+      })
+      return arr;
     },
     // 滚动事件，调用更新位置
     handleScroll() {
@@ -817,34 +852,12 @@ export default {
       this.$els.content.style.webkitTransform = `translateY(${start *
         this.itemsHeight}px)`;
     },
-    // 获取指定id元素和更改指定id属性
-    changeGetItem(id, k, v) {
-      var ind = 0;
-      const tar = this.mergedData.filter((item, index) => {
-        if (item._id == id) {
-          if ((item, k, v)) {
-            Vue.set(item, k, v);
-          }
-          ind = index;
-          return true;
-        }
-      });
-      if (tar.length !== 1) {
-        console.log(
-          "tasklistv2一共找到了" +
-            tar.length +
-            "条相同id的数据，请确认数据是否正确"
-        );
-      }
-      return tar && tar.length == 1
-        ? [tar[0], ind, this.mergedData]
-        : undefined;
-    },
+
     // 选中指定id
     selectId(id) {
       var a = this.changeGetItem(id);
       if (a) {
-        this.selectItem = a[0];
+        this.selectThis(a[0])
       }
     },
     //滚动到指定id的位置
