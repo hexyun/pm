@@ -19,6 +19,7 @@
       padding: 0 16px;
       position: relative;
       font-size: 12px;
+      box-sizing: border-box;
       cursor: pointer;
       .itemIndex {
         font-size: 10px;
@@ -61,6 +62,7 @@
       .right {
         display: flex;
         padding-left: 10px;
+        min-width: 10rem;
         .time {
           margin-right: 5px;
           overflow: hidden;
@@ -197,7 +199,7 @@
             <div
               class="rank"
               v-if="islabel"
-              :style="{'text-indent':listItem.positionInd.split('.').length*0.8+'rem'}"
+              :style="{'text-indent':listItem.positionInd.length?listItem.positionInd.split('.').length*0.8+'rem':'.5rem'}"
             >{{listItem.positionInd}}</div>
             <!-- <div class="open">{{listItem.hasChildren?listItem.isOpen?'-':'+':''}}</div> -->
             <div class="title">
@@ -276,7 +278,9 @@ export default {
       mergedData: [],
       mergedDataCopy: [],
       dataType: "",
-      halfTask:0
+      halfTask: 0,
+      start: 0,
+      end: 10
     };
   },
   filters: {
@@ -331,12 +335,11 @@ export default {
       // 每次task改变的时候动态合并数据，同时更新一下视图防止卡顿，触发加载完成事件
       console.log("tasklistv2task更改成功");
       this.mergeData();
-      this.updateVisibleData();
       this.$emit("loaded-change_" + this.mainid);
     }
   },
   methods: {
-     // 深拷贝
+    // 深拷贝
     deepCopy(obj) {
       var result = Array.isArray(obj) ? [] : {};
       for (var key in obj) {
@@ -355,7 +358,7 @@ export default {
       // 排序数据，回复滚动条
       this.mergedData = this.taskListSort(this.mergedDataCopy, type, fil);
       this.$els.tasklisttwo.scrollTo(0, 1);
-      this.handleScroll();
+      this.updateVisibleData();
     },
     // 排序事件
     taskListSort(list, type, fil) {
@@ -508,6 +511,7 @@ export default {
           }
           break;
       }
+      this.updateVisibleData();
       return arr;
     },
     sortData(list, key) {
@@ -530,9 +534,6 @@ export default {
             list[i] = temp;
           }
         }
-      }
-      for (let i = 0; i < list.length; i++) {
-        console.log(list[i][key]);
       }
       return list;
     },
@@ -612,7 +613,7 @@ export default {
     sortToTime(time) {
       return new Date(time).toJSON().substr(0, 10);
     },
-        // 合并数据
+    // 合并数据
     mergeData() {
       // 创建一个空数组
       var list = this.task;
@@ -659,12 +660,6 @@ export default {
       console.log("tasklistv2数据合并覆盖成功");
       // 存缓存
       this.setMemory();
-      // 更新界面
-      if (this.$els.tasklisttwo.scrollTop == 0) {
-        this.$els.tasklisttwo.scrollBy(0, 1);
-      } else {
-        this.$els.tasklisttwo.scrollBy(0, -1);
-      }
     },
     // 操作缓存
     setMemory() {
@@ -728,7 +723,7 @@ export default {
     },
     // 增加任务
     addTask(addItem) {
-      var self=this;
+      var self = this;
       //判断这个id是否重复
       if (this.changeGetItem(addItem._id)) {
         console.log("tasklistv2重复id");
@@ -738,13 +733,19 @@ export default {
         // 排序数据
         this.mergedData = this.taskListSort(this.mergedData);
         // 更改选中
-        this.selectThis(addItem)
+        this.selectThis(addItem);
         // 延迟更改滚动，等到计算完成后
-        Vue.nextTick(function(){
-          self.scrollTo(addItem._id)
+        Vue.nextTick(function() {
+          if (
+            self.changeGetItem(addItem._id)[1] >= self.start &&
+            self.changeGetItem(addItem._id)[1] < self.end
+          ) {
+            self.updateVisibleData();
+          } else {
+            self.scrollTo(addItem._id);
+          }
           // 重新截取
-          self.updateVisibleData();
-        })
+        });
       }
     },
     // 删除任务
@@ -752,6 +753,7 @@ export default {
       var targetId = id;
       var father = "";
       var next = {};
+      var self=this;
       // 是否传了id
       if (!targetId) {
         // 没指定id，操作当前选中项目
@@ -804,73 +806,75 @@ export default {
           this.mergedData.splice(index, 1);
           // 重新排序
           this.mergedData = this.taskListSort(this.mergedData);
-          // 更新截取数据
-          this.updateVisibleData();
-          // 滚动一下滚动条触发截取事件
-          if (this.$els.tasklisttwo.scrollTop == 0) {
-            this.$els.tasklisttwo.scrollBy(0, 1);
-          } else {
-            this.$els.tasklisttwo.scrollBy(0, -1);
-          }
         }
       });
       // 赋值下个选中的项目和滚动
-      this.selectThis(next)
-      this.scrollTo(next._id);
+      this.selectThis(next);
+      // 更新截取数据
+      if(self.mergedData.length){
+        if (self.changeGetItem(next._id)&&
+          self.changeGetItem(next._id)[1] >= self.start &&
+          self.changeGetItem(next._id)[1] < self.end
+        ) {
+            self.updateVisibleData();
+        } else {
+          self.scrollTo(next._id);
+        }
+      }else{
+        self.$els.tasklisttwo.scrollBy(0, 1);
+      }
     },
     //过滤事件
-    filterValue(val){
-      var arr=this.mergedData.filter(item=>{
-        if(item.task_name.indexOf(val)!==-1){
+    filterValue(val) {
+      var arr = this.mergedData.filter(item => {
+        if (item.task_name.indexOf(val) !== -1) {
           return true;
         }
-      })
+      });
       return arr;
     },
     // 滚动事件，调用更新位置
     handleScroll() {
       // 滚动的时候执行列表更新事件
       var scrollTop = event.target.scrollTop;
-      if (scrollTop == 0) {
-        this.$els.tasklisttwo.scrollBy(0, 1);
-      }
       this.updateVisibleData(scrollTop);
     },
     // 更新列表和计算位置
     updateVisibleData(scrollTop) {
-      scrollTop = scrollTop || 0;
+      scrollTop = scrollTop || this.$els.tasklisttwo.scrollTop;
       // 计算父级元素能渲染几个dom
       const visibleCount = Math.ceil(
         this.$els.tasklisttwo.offsetHeight / this.itemsHeight
       );
-      this.halfTask=Math.ceil(visibleCount/2);
+      this.halfTask = Math.floor(
+        this.$els.tasklisttwo.offsetHeight / this.itemsHeight / 2
+      );
       // 根据滚动条计算第一个元素应该是哪个
-      var start = Math.floor(scrollTop / this.itemsHeight);
+      this.start = Math.floor(scrollTop / this.itemsHeight);
       // 计算最后一个元素
-      const end = start + visibleCount;
+      this.end = this.start + visibleCount;
       // 获取需要渲染的列表
-      this.visibleData = this.mergedData.slice(start, end);
+      this.visibleData = this.mergedData.slice(this.start, this.end);
       // 更改滚动元素的偏移值
-      this.$els.content.style.webkitTransform = `translateY(${start *
+      this.$els.content.style.webkitTransform = `translateY(${this.start *
         this.itemsHeight}px)`;
     },
-
     // 选中指定id
     selectId(id) {
       var a = this.changeGetItem(id);
       if (a) {
-        this.selectThis(a[0])
+        this.selectThis(a[0]);
       }
     },
     //滚动到指定id的位置
     scrollTo(id) {
       var a = this.changeGetItem(id);
       if (a) {
-        var tarTask=0;
-        if(a[1]-this.halfTask<0){
-          tarTask=0;
-        }else{
-          tarTask=a[1]-this.halfTask;
+        var tarTask = 0;
+        if (a[1] - this.halfTask < 0) {
+          tarTask = 0;
+        } else {
+          tarTask = a[1] - this.halfTask;
         }
         this.$els.tasklisttwo.scrollTo(0, tarTask * this.itemsHeight);
       }
@@ -904,7 +908,6 @@ export default {
     },
     // 负责人下拉框展示
     changeLeader(item) {
-      console.log(123);
       var target = event.path[0];
       var el = this.$els.dropdown;
       el.style.visibility = "visible";

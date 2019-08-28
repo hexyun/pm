@@ -1,13 +1,13 @@
 <template>
-  <div style="height:300px;width:60%">
+  <div style="height:340px;width:60%">
     <button @click="selectId">选中指定id</button>
     <button @click="scrollTo">滚动到指定id</button>
     <button @click="getId">获取id数据</button>
     <button @click="changeId">修改id数据</button>
-    <button @click="addTask(addItem,1)">添加同级数据</button>
-    <button @click="addTask(addItem,0)">添加子级数据</button>
+    <button @click="addTask(addItem)">添加数据</button>
     <button @click="delTask">删除数据</button>
     <button @click="changeTask">更改数据</button>
+    <button @click="changeTasksss">更新数据</button>
     <br />
     <button @click="taskListSortControl('create_uid')">创建人排序</button>
     <button @click="taskListSortControl('complete_uid')">完成人排序</button>
@@ -48,7 +48,7 @@ export default {
     return {
       // 任务列表
       task: list,
-      // task:[],
+      tasksss:[],
       // 人员列表
       timeStamp: 0,
       // timeStamp: 1566273596425,
@@ -73,7 +73,7 @@ export default {
       // 清单id,必填项
       listId: "5d53c99563e4ab4ec83d0f9b8",
       addItem: {
-        _id: "5d53eba9571c63432db594c2412",
+        _id: "5d53eba9571c6344123512332db594c2412",
         archived: false,
         desc: "",
         type: "task",
@@ -93,7 +93,7 @@ export default {
         page_id: "5d53d9eb681b815d32779662",
         flow_id: "5d53d9ec681b815d32779722",
         create_uid: "593e44b855a86260805ba046",
-        // father_id: "5d53eabd7b846b3ff53dbe69",
+        father_id: "5d53eabd7b846b3ff53dbe69",
         path:
           "5d53e0e313c5491b655c5024/5d53e0e313c5491b655c5025/5d53eabd7b846b3ff53dbe69/5d53eabd7b846b3ff53dbe77/5d53eba9571c63432db594c2",
         __v: 0,
@@ -105,6 +105,10 @@ export default {
   ready() {},
   methods: {
     // v2
+    changeTasksss(){
+      this.timeStamp = 0;
+       this.task = this.list;
+    },
     changeTask() {
       this.timeStamp = 123;
       this.task = list2;
@@ -138,7 +142,7 @@ export default {
       console.log(list,item);
     },
     loadedChange(){
-      console.log(123)
+      // console.log('loadingEnd')
     },
     delTask() {
       this.$refs.listtwo.delTask();
