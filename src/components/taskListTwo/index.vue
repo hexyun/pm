@@ -275,7 +275,8 @@ export default {
       preTitle: "",
       mergedData: [],
       mergedDataCopy: [],
-      dataType: ""
+      dataType: "",
+      halfTask:0
     };
   },
   filters: {
@@ -842,6 +843,7 @@ export default {
       const visibleCount = Math.ceil(
         this.$els.tasklisttwo.offsetHeight / this.itemsHeight
       );
+      this.halfTask=Math.ceil(visibleCount/2);
       // 根据滚动条计算第一个元素应该是哪个
       var start = Math.floor(scrollTop / this.itemsHeight);
       // 计算最后一个元素
@@ -864,7 +866,13 @@ export default {
     scrollTo(id) {
       var a = this.changeGetItem(id);
       if (a) {
-        this.$els.tasklisttwo.scrollTo(0, a[1] * this.itemsHeight);
+        var tarTask=0;
+        if(a[1]-this.halfTask<0){
+          tarTask=0;
+        }else{
+          tarTask=a[1]-this.halfTask;
+        }
+        this.$els.tasklisttwo.scrollTo(0, tarTask * this.itemsHeight);
       }
     },
     // 选中触发事件
