@@ -23,6 +23,7 @@
       cursor: pointer;
       .itemIndex {
         font-size: 10px;
+        width: 15px;
         padding: 0 5px;
         color: #cccccc;
       }
@@ -41,12 +42,36 @@
         text-indent: 0.5rem;
         color: #999999;
       }
-      .open {
+      .open, .close {
         font-size: 16px;
         color: #81b9ff;
         font-weight: bold;
         margin-left: 12px;
         cursor: pointer;
+      }
+      .open::before {
+        position: relative;
+        left: 0;
+        top: 0;
+        content: "-";
+        width: 100%;
+        height: 100%;
+        color: #484848;
+        font-size: 10px;
+        line-height: 10px;
+        font-weight: bold;
+      }
+      .close::before {
+        position: relative;
+        left: 0;
+        top: 0;
+        content: "+";
+        width: 100%;
+        height: 100%;
+        color: #484848;
+        font-size: 10px;
+        line-height: 10px;
+        font-weight: bold;
       }
       .title {
         margin-left: 6px;
@@ -182,6 +207,7 @@
           :class="{'done':listItem.finish_time,'selected':selectItem._id==listItem._id&&listItem.type!=='label'}"
           :key="index"
           @click="selectThis(listItem)"
+          v-show="listItem.isShow"
         >
           <div v-if="listItem.type=='label'" class="label">
             <div>{{listItem.text}}</div>
@@ -201,7 +227,10 @@
               v-if="islabel"
               :style="{'text-indent':listItem.positionInd.length?listItem.positionInd.split('.').length*0.8+'rem':'.5rem'}"
             >{{listItem.positionInd}}</div>
-            <!-- <div class="open">{{listItem.hasChildren?listItem.isOpen?'-':'+':''}}</div> -->
+            <div 
+              :class="{'open': listItem.isOpen, 'close': !listItem.isOpen}" 
+              v-show="listItem.hasChildren" 
+              @click="showSwitch(listItem)"></div>
             <div class="title">
               <input
                 type="text"
@@ -484,6 +513,7 @@ export default {
                 arr.push(item);
                 getChildren(list, k, item, item.positionInd);
               });
+              v.children = children;
             } else {
               // 如果没有赋值没有子任务
               v.hasChildren = false;
@@ -649,9 +679,15 @@ export default {
             });
           }
         }
+        for (let i = 0; i < arr.length; i++) {
+          arr[i].isShow = true;
+        }
         this.mergedData = arr;
       } else {
         console.log("tasklistv2数据覆盖");
+        for (let i = 0; i < list.length; i++) {
+          list[i].isShow = true;
+        }
         this.mergedData = list;
       }
       // 排序
@@ -837,12 +873,14 @@ export default {
     handleScroll() {
       // 滚动的时候执行列表更新事件
       var scrollTop = event.target.scrollTop;
+      
       this.updateVisibleData(scrollTop);
     },
     // 更新列表和计算位置
     updateVisibleData(scrollTop) {
       scrollTop = scrollTop || this.$els.tasklisttwo.scrollTop;
       // 计算父级元素能渲染几个dom
+      
       const visibleCount = Math.ceil(
         this.$els.tasklisttwo.offsetHeight / this.itemsHeight
       );
@@ -851,12 +889,19 @@ export default {
       );
       // 根据滚动条计算第一个元素应该是哪个
       this.start = Math.floor(scrollTop / this.itemsHeight);
-      // 计算最后一个元素
       this.end = this.start + visibleCount;
-      // 获取需要渲染的列表
+      for (let i = this.start; i < this.end; i++) {
+        if (this.mergedData[i] && this.mergedData[i].isShow === false) {
+          this.end++;
+        }
+      }
+       // 获取需要渲染的列表
       this.visibleData = this.mergedData.slice(this.start, this.end);
+      // 清除 visibleDate 中不显示的元素
+      this.visibleData = this.visibleData.filter((item) => item.isShow);
+      this.mergedData = this.mergedData.filter( (item) => item.isShow);
       // 更改滚动元素的偏移值
-      this.$els.content.style.webkitTransform = `translateY(${this.start *
+      this.$els.content.style.webkitTransform = `translateY(${(this.start) *
         this.itemsHeight}px)`;
     },
     // 选中指定id
@@ -936,6 +981,23 @@ export default {
     changeOff() {
       if (event.path[0].className.indexOf("leader") == -1) {
         this.searchListShow = false;
+      }
+    },
+    showSwitch (listItem) {
+      if (!listItem.hasChildren) return;
+      Vue.set(listItem, 'isOpen', !listItem.isOpen);
+      for (let i = 0; i < listItem.children.length; i++) {
+        this.isShowChildren (listItem.children, listItem.isOpen);
+      }
+      this.$els.tasklisttwo.scrollTo(0, this.start*this.itemsHeight);
+      this.updateVisibleData();
+    },
+    isShowChildren (childrenList, bool) {
+      for (let i = 0; i < childrenList.length; i++) {
+        childrenList[i].isShow = bool;
+        if (childrenList[i].hasChildren) {
+          this.isShowChildren(childrenList[i].children, bool);
+        }
       }
     }
   },
