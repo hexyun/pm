@@ -207,7 +207,7 @@
           :class="{'done':listItem.finish_time,'selected':selectItem._id==listItem._id&&listItem.type!=='label'}"
           :key="index"
           @click="selectThis(listItem)"
-          v-show="listItem.isShow"
+          v-show="typeof listItem.show === 'undefined' || listItem.isShow"
         >
           <div v-if="listItem.type=='label'" class="label">
             <div>{{listItem.text}}</div>
@@ -898,8 +898,15 @@ export default {
        // 获取需要渲染的列表
       this.visibleData = this.mergedData.slice(this.start, this.end);
       // 清除 visibleDate 中不显示的元素
-      this.visibleData = this.visibleData.filter((item) => item.isShow);
-      this.mergedData = this.mergedData.filter( (item) => item.isShow);
+      this.visibleData = this.visibleData.filter( (item) => {
+        if (item.type === 'label') return true;
+        return item.isShow;
+      });
+      // this.mergedData = this.mergedData.filter( (item) => {
+      //   if (item.type === 'label') return true;
+      //   return item.isShow;
+      // });
+      console.log(this.mergedData);
       // 更改滚动元素的偏移值
       this.$els.content.style.webkitTransform = `translateY(${(this.start) *
         this.itemsHeight}px)`;
