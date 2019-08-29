@@ -906,7 +906,6 @@ export default {
       //   if (item.type === 'label') return true;
       //   return item.isShow;
       // });
-      console.log(this.mergedData);
       // 更改滚动元素的偏移值
       this.$els.content.style.webkitTransform = `translateY(${(this.start) *
         this.itemsHeight}px)`;
