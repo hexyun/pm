@@ -4,10 +4,12 @@
     <button @click="scrollTo">滚动到指定id</button>
     <button @click="getId">获取id数据</button>
     <button @click="changeId">修改id数据</button>
-    <button @click="addTask(addItem)">添加数据</button>
+    <button @click="addTask(1)">添加同级</button>
+    <button @click="addTask(0)">添加子级</button>
     <button @click="delTask">删除数据</button>
     <button @click="changeTask">更改数据</button>
     <button @click="changeTasksss">更新数据</button>
+    <button @click="getChildren">获取所有子孙任务</button>
     <br />
     <button @click="taskListSortControl('create_uid')">创建人排序</button>
     <button @click="taskListSortControl('complete_uid')">完成人排序</button>
@@ -104,10 +106,13 @@ export default {
   },
   ready() {},
   methods: {
+    getChildren(){
+      var a=this.$refs.listtwo.changeGetChildrenItem("5d53e0e313c5491b655c5027",'deadline',123);
+    },
     // v2
     changeTasksss(){
       this.timeStamp = 0;
-       this.task = this.list;
+       this.task = [];
     },
     changeTask() {
       this.timeStamp = 123;
@@ -130,7 +135,8 @@ export default {
       );
     },
     selected(list, item) {
-      // console.log(item)
+      this.selectItem=item;
+      console.log(item)
     },
     changeDone(list, item) {
       console.log(item.finish_time);
@@ -147,7 +153,25 @@ export default {
     delTask() {
       this.$refs.listtwo.delTask();
     },
-    addTask(item) {
+    addTask(type) {
+      var item={};
+      if(type){
+        if(this.selectItem.father_id){
+          item={
+            father_id:this.selectItem.father_id,
+            _id:Math.ceil(Math.random()*100000000000)
+          }
+        }else{
+          item={
+            _id:Math.ceil(Math.random()*100000000000)
+          }
+        }
+      }else{
+        item={
+          father_id:this.selectItem._id,
+          _id:Math.ceil(Math.random()*100000000000),
+        }
+      }
       this.$refs.listtwo.addTask(item);
     },
     taskListSortControl(type,fil) {

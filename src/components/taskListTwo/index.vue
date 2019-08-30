@@ -765,6 +765,7 @@ export default {
         console.log("tasklistv2重复id");
       } else {
         // 添加数据
+        addItem.isShow = true;
         this.mergedData.push(addItem);
         // 排序数据
         this.mergedData = this.taskListSort(this.mergedData);
