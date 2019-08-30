@@ -159,17 +159,17 @@ export default {
         if(this.selectItem.father_id){
           item={
             father_id:this.selectItem.father_id,
-            _id:Math.ceil(Math.random()*100000000000)
+            _id:new Date().getTime()
           }
         }else{
           item={
-            _id:Math.ceil(Math.random()*100000000000)
+            _id:new Date().getTime()
           }
         }
       }else{
         item={
           father_id:this.selectItem._id,
-          _id:Math.ceil(Math.random()*100000000000),
+          _id:new Date().getTime()
         }
       }
       this.$refs.listtwo.addTask(item);

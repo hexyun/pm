@@ -395,6 +395,7 @@ export default {
       this.isol = false;
       // 创建一个空数组用来储存结果
       var arr = [];
+      var self=this;
       this.dataType = type;
       if (fil == "done") {
         var done = [];
@@ -507,7 +508,7 @@ export default {
             if (children.length) {
               v.hasChildren = true;
               v.isOpen = true;
-              children.map((item, index) => {
+              self.sortData(children,'_id').map((item, index) => {
                 // 拼接序列号
                 item.positionInd = positionInd + "." + (index + 1);
                 arr.push(item);
@@ -528,6 +529,7 @@ export default {
             }
           }
           // 遍历第一级任务，并获取所有子集任务
+          listOne=this.sortData(listOne,'_id').reverse()
           for (let i = 0; i < listOne.length; i++) {
             // 赋值序列号
             listOne[i].positionInd = i + 1;
@@ -756,6 +758,31 @@ export default {
       return tar && tar.length == 1
         ? [tar[0], ind, this.mergedData]
         : undefined;
+    },
+    changeGetChildrenItem(id, k, v){
+      if(!id){
+        id=undefined;
+      }
+      var tarArr=[];
+      var self=this;
+      var getChildrens=function(id){
+        var children=self.mergedData.filter(item=>{
+          if(item.father_id&&item.father_id==id){
+            return true;
+          }
+        })
+        if(children.length){
+          children.map(item=>{
+            tarArr.push(item);
+            getChildrens(item._id);
+          })
+        }
+        return tarArr;
+      }
+      getChildrens(id).forEach(item=>{
+        Vue.set(item,k,v)
+      })
+      return getChildrens(id);
     },
     // 增加任务
     addTask(addItem) {
