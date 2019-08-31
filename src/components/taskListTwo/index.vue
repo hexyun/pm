@@ -42,7 +42,8 @@
         text-indent: 0.5rem;
         color: #999999;
       }
-      .open, .close {
+      .open,
+      .close {
         font-size: 16px;
         color: #81b9ff;
         font-weight: bold;
@@ -225,12 +226,13 @@
             <div
               class="rank"
               v-if="islabel"
-              :style="{'text-indent':listItem.positionInd.length?listItem.positionInd.split('.').length*0.8+'rem':'.5rem'}"
+              :style="{'text-indent':listItem.positionInd&&listItem.positionInd.length?listItem.positionInd.split('.').length*0.8+'rem':'.5rem'}"
             >{{listItem.positionInd}}</div>
-            <div 
-              :class="{'open': listItem.isOpen, 'close': !listItem.isOpen}" 
-              v-show="listItem.hasChildren" 
-              @click="showSwitch(listItem)"></div>
+            <div
+              :class="{'open': listItem.isOpen, 'close': !listItem.isOpen}"
+              v-show="listItem.hasChildren"
+              @click="showSwitch(listItem)"
+            ></div>
             <div class="title">
               <input
                 type="text"
@@ -387,6 +389,7 @@ export default {
       // 创建一个空数组
       var list = this.task;
       var arr = [];
+      var finalData = [];
       // 如果有时间戳
       if (this.timeStamp) {
         console.log("tasklistv2数据合并");
@@ -421,16 +424,17 @@ export default {
         for (let i = 0; i < arr.length; i++) {
           arr[i].isShow = true;
         }
-        this.mergedData = arr;
+        finalData = arr;
       } else {
         console.log("tasklistv2数据覆盖");
         for (let i = 0; i < list.length; i++) {
           list[i].isShow = true;
         }
-        this.mergedData = list;
+        finalData = list;
       }
       // 排序
-      this.mergedDataCopy = this.deepCopy(this.mergedData);
+      this.mergedData = this.deepCopy(finalData);
+      this.mergedDataCopy = this.deepCopy(finalData);
       this.taskListSortControl();
       console.log("tasklistv2数据合并覆盖成功");
       // 存缓存
@@ -476,64 +480,59 @@ export default {
     taskListSortControl(type, fil) {
       // 排序数据，回复滚动条
       this.mergedData = this.taskListSort(this.mergedDataCopy, type, fil);
+      // 这里状态改变的时候同时更改了两个数据，但是排序的数据没有同步
       this.$els.tasklisttwo.scrollTo(0, 1);
       this.updateVisibleData();
     },
     // 排序事件
     taskListSort(list, type, fil) {
+      // 创建一个空数组用来储存结果
+      var self = this;
+      var arr = [];
+      var filList=self.deepCopy(list)||[];
+      if (fil == "done") {
+        filList=list.filter((item, index) => {
+          return item.finish_time?true:false;
+        });
+      } else if (fil == "undone") {
+        filList=list.filter((item, index) => {
+          return !item.finish_time?true:false;
+        });
+      }
+
+      // type默认是正常排序.
       this.islabel = false;
       this.isol = false;
-      // 创建一个空数组用来储存结果
-      var arr = [];
-      var self=this;
-      this.dataType = type;
-      if (fil == "done") {
-        var done = [];
-        list.forEach((item, index) => {
-          if (item.finish_time) {
-            done.push(item);
-          }
-        });
-        list = done;
-      } else if (fil == "undone") {
-        var undone = [];
-        list.forEach((item, index) => {
-          if (!item.finish_time) {
-            undone.push(item);
-          }
-        });
-        list = undone;
-      }
-      // type默认是正常排序.
       switch (type) {
         case "create_uid":
-          arr = this.sortData(list, "create_uid");
-          arr = this.sortDataNickName(arr, "create_uid", "创建人以移除");
+          filList = this.sortData(filList, "create_uid");
+          arr = this.sortDataNickName(filList, "create_uid", "创建人以移除");
           break;
         case "complete_uid":
-          arr = this.sortData(list, "complete_uid");
-          arr = this.sortDataNickName(arr, "complete_uid", "没有完成人的任务");
+          filList = this.sortData(filList, "complete_uid");
+          arr = this.sortDataNickName(filList, "complete_uid", "没有完成人的任务");
           break;
         case "leader_uid":
-          arr = this.sortData(list, "leader_uid");
-          arr = this.sortDataNickName(arr, "leader_uid", "没有负责人的任务");
+          filList = this.sortData(filList, "leader_uid");
+          arr = this.sortDataNickName(filList, "leader_uid", "没有负责人的任务");
           break;
         case "create_time":
-          arr = this.sortData(list, "create_time");
-          arr = this.sortDataTime(arr, "create_time", "没有创建日期的任务");
+          filList = this.sortData(filList, "create_time");
+          arr = this.sortDataTime(filList, "create_time", "没有创建日期的任务");
           break;
         case "deadline":
-          arr = this.sortData(list, "deadline");
-          arr = this.sortDataTime(arr, "deadline", "没有截止日期的任务");
+          filList = this.sortData(filList, "deadline");
+          arr = this.sortDataTime(filList, "deadline", "没有截止日期的任务");
           break;
         case "finish_time":
-          arr = this.sortData(list, "finish_time");
-          arr = this.sortDataTime(arr, "finish_time", "没有完成日期的任务");
+          filList = this.sortData(filList, "finish_time");
+          arr = this.sortDataTime(filList, "finish_time", "没有完成日期的任务");
           break;
         case "status":
+          filList = this.sortData(filList, "create_time");
           var done = [{ type: "label", text: "完成的任务", num: "" }];
           var undone = [{ type: "label", text: "未完成的任务", num: "" }];
-          list.forEach((item, index) => {
+          filList.forEach((item, index) => {
             if (item.finish_time) {
               done.push(item);
             } else {
@@ -546,6 +545,7 @@ export default {
           done.length > 1 ? (arr = arr.concat(done)) : null;
           break;
         case "priority":
+          filList = this.sortData(filList, "create_time");
           var priority1 = [
             { type: "label", text: "优先级:普通", num: "", priority: 1 }
           ];
@@ -558,7 +558,7 @@ export default {
           var priority4 = [
             { type: "label", text: "优先级:重要紧急", num: "", priority: 4 }
           ];
-          list.forEach((item, index) => {
+          filList.forEach((item, index) => {
             switch (item.priority) {
               case 1:
                 priority1.push(item);
@@ -598,7 +598,7 @@ export default {
             if (children.length) {
               v.hasChildren = true;
               v.isOpen = true;
-              self.sortData(children,'create_time').reverse().map((item, index) => {
+              self.sortData(children, "create_time").reverse().map((item, index) => {
                 // 拼接序列号
                 item.positionInd = positionInd + "." + (index + 1);
                 arr.push(item);
@@ -612,34 +612,29 @@ export default {
             return arr;
           };
           // 存储第一级任务
-          var listOne = [];
-          for (let i = 0; i < list.length; i++) {
-            if (!list[i].father_id) {
-              listOne.push(list[i]);
-            }
-          }
+          var listOne = filList.filter(item=>{
+            return !item.father_id?true:false;
+          })
+          // 按照创建事件排序，防止多次点击错乱
+          listOne = this.sortData(listOne, "create_time").reverse();
           // 遍历第一级任务，并获取所有子集任务
-          listOne=this.sortData(listOne,'create_time').reverse()
-          for (let i = 0; i < listOne.length; i++) {
-            // 赋值序列号
-            listOne[i].positionInd = i + 1;
-            arr.push(listOne[i]);
-            // 遍历获取子任务
-            getChildren(list, "father_id", listOne[i], i + 1);
-          }
+          listOne.forEach((item,index)=>{
+            item.positionInd = index + 1;
+            arr.push(item);
+            getChildren(filList, "father_id", item, index + 1);
+          })
           // 赋值任务序号
           for (let i = 0; i < arr.length; i++) {
             arr[i].ind = i + 1;
           }
           break;
       }
-      // this.updateVisibleData();
       return arr;
     },
     sortData(list, key) {
-      var none = "none";
+      var none = ".";
       if (key == "create_time" || key == "deadline" || key == "finish_time") {
-        none = false;
+        none = 0;
       }
       for (let i = 0; i < list.length; i++) {
         if (!list[i][key]) {
@@ -672,7 +667,7 @@ export default {
         if (hasNickName) {
           Vue.set(item, "nickname", hasNickName.nickname);
         } else {
-          Vue.set(item, "nickname", "none");
+          Vue.set(item, "nickname", ".");
         }
         // 查看昵称列表有没有这个
         if (!nickname[item.nickname]) {
@@ -684,7 +679,7 @@ export default {
       // 遍历昵称列表拼接
       Object.keys(nickname).forEach(item => {
         var name = item;
-        if (name == "none" || name == 0) {
+        if (!name ||name == ".") {
           name = noneTitle;
         }
         var names = [
@@ -706,7 +701,7 @@ export default {
         if (item[type]) {
           Vue.set(item, "time", this.sortToTime(item[type]));
         } else {
-          Vue.set(item, "time", "none");
+          Vue.set(item, "time", ".");
         }
 
         if (!times[item.time]) {
@@ -717,7 +712,7 @@ export default {
       });
       Object.keys(times).forEach(item => {
         var name = item;
-        if (name == "none" || name == 0) {
+        if (!name||name == ".") {
           name = noneTitle;
         }
         var names = [
@@ -738,15 +733,13 @@ export default {
     // 滚动事件，调用更新位置
     handleScroll() {
       // 滚动的时候执行列表更新事件
-      var scrollTop = event.target.scrollTop;
-      
+      var scrollTop = event.target.scrollTop || 0;
       this.updateVisibleData(scrollTop);
     },
     // 更新列表和计算位置
     updateVisibleData(scrollTop) {
       scrollTop = scrollTop || this.$els.tasklisttwo.scrollTop;
       // 计算父级元素能渲染几个dom
-      
       const visibleCount = Math.ceil(
         this.$els.tasklisttwo.offsetHeight / this.itemsHeight
       );
@@ -761,11 +754,11 @@ export default {
           this.end++;
         }
       }
-       // 获取需要渲染的列表
+      // 获取需要渲染的列表
       this.visibleData = this.mergedData.slice(this.start, this.end);
       // 清除 visibleDate 中不显示的元素
-      this.visibleData = this.visibleData.filter( (item) => {
-        if (item.type === 'label') return true;
+      this.visibleData = this.visibleData.filter(item => {
+        if (item.type === "label") return true;
         return item.isShow;
       });
       // this.mergedData = this.mergedData.filter( (item) => {
@@ -773,7 +766,7 @@ export default {
       //   return item.isShow;
       // });
       // 更改滚动元素的偏移值
-      this.$els.content.style.webkitTransform = `translateY(${(this.start) *
+      this.$els.content.style.webkitTransform = `translateY(${this.start *
         this.itemsHeight}px)`;
     },
 
@@ -801,29 +794,31 @@ export default {
         ? [tar[0], ind, this.mergedData]
         : undefined;
     },
-    changeGetChildrenItem(id, k, v){
-      if(!id){
-        id=undefined;
+    changeGetChildrenItem(id, k, v) {
+      if (!id) {
+        id = undefined;
       }
-      var tarArr=[];
-      var self=this;
-      var getChildrens=function(id){
-        var children=self.mergedData.filter(item=>{
-          if(item.father_id&&item.father_id==id){
+      var tarArr = [];
+      var self = this;
+      var getChildrens = function(id) {
+        var children = self.mergedData.filter(item => {
+          if (item.father_id && item.father_id == id) {
             return true;
           }
-        })
-        if(children.length){
-          children.map(item=>{
+        });
+        if (children.length) {
+          children.map(item => {
             tarArr.push(item);
             getChildrens(item._id);
-          })
+          });
         }
         return tarArr;
+      };
+      if (id && k) {
+        getChildrens(id).forEach(item => {
+          Vue.set(item, k, v);
+        });
       }
-      getChildrens(id).forEach(item=>{
-        Vue.set(item,k,v)
-      })
       return getChildrens(id);
     },
     // 增加任务
@@ -836,8 +831,9 @@ export default {
         // 添加数据
         addItem.isShow = true;
         this.mergedData.push(addItem);
+        this.mergedDataCopy.push(addItem);
         // 排序数据
-        this.mergedData = this.taskListSort(this.mergedData);
+        this.taskListSortControl();
         // 更改选中
         this.selectThis(addItem);
         // 延迟更改滚动，等到计算完成后
@@ -859,7 +855,7 @@ export default {
       var targetId = id;
       var father = "";
       var next = {};
-      var self=this;
+      var self = this;
       // 是否传了id
       if (!targetId) {
         // 没指定id，操作当前选中项目
@@ -905,35 +901,64 @@ export default {
           }
         }
       }
+
       // 切掉数据
+      // function spliceChildren(list, id) {
+      //   var child=list.filter((item, index) => {
+      //     if (item._id == id || item.father_id == id) {
+      //       list.splice(index, 1);
+      //       spliceChildren(list,item._id)
+      //     }
+      //   });
+      // }
+      // spliceChildren(this.mergedDataCopy, targetId);
+      // this.mergedDataCopy.filter((item,index)=>{
+      //   if(item._id==targetId){
+      //     this.mergedDataCopy.splice(index,1)
+      //   }
+      // })
+      // function spliceChildren(list,id){
+      //   list.filter((item,index)=>{
+      //     if(item.father_id==id){
+      //       var tar=list.splice(index,1)
+      //       spliceChildren(list,tar._id)
+      //     }
+      //   })
+      // }
+      // spliceChildren(this.mergedDataCopy,targetId)
+
       this.mergedData.filter((item, index) => {
         if (item._id == targetId) {
           // 找到并切掉对应的
           this.mergedData.splice(index, 1);
           // 重新排序
-          this.mergedData = this.taskListSort(this.mergedData);
+          //this.mergedData = this.taskListSort(this.mergedDataCopy);
         }
       });
+      this.taskListSortControl();
+      console.log(123,this.mergedDataCopy);
+      console.log(this.mergedData);
       // 赋值下个选中的项目和滚动
       this.selectThis(next);
       // 更新截取数据
-      if(self.mergedData.length){
-        if (self.changeGetItem(next._id)&&
+      if (self.mergedData.length) {
+        if (
+          self.changeGetItem(next._id) &&
           self.changeGetItem(next._id)[1] >= self.start &&
           self.changeGetItem(next._id)[1] < self.end
         ) {
-            self.updateVisibleData();
+          self.updateVisibleData();
         } else {
           self.scrollTo(next._id);
         }
-      }else{
+      } else {
         self.$els.tasklisttwo.scrollBy(0, 1);
       }
     },
     //过滤事件
     filterValue(val) {
       var arr = this.mergedData.filter(item => {
-        if (item.task_name&&item.task_name.indexOf(val) !== -1) {
+        if (item.task_name && item.task_name.indexOf(val) !== -1) {
           return true;
         }
       });
@@ -1018,16 +1043,16 @@ export default {
         this.searchListShow = false;
       }
     },
-    showSwitch (listItem) {
+    showSwitch(listItem) {
       if (!listItem.hasChildren) return;
-      Vue.set(listItem, 'isOpen', !listItem.isOpen);
+      Vue.set(listItem, "isOpen", !listItem.isOpen);
       for (let i = 0; i < listItem.children.length; i++) {
-        this.isShowChildren (listItem.children, listItem.isOpen);
+        this.isShowChildren(listItem.children, listItem.isOpen);
       }
-      this.$els.tasklisttwo.scrollTo(0, this.start*this.itemsHeight);
+      this.$els.tasklisttwo.scrollTo(0, this.start * this.itemsHeight);
       this.updateVisibleData();
     },
-    isShowChildren (childrenList, bool) {
+    isShowChildren(childrenList, bool) {
       for (let i = 0; i < childrenList.length; i++) {
         childrenList[i].isShow = bool;
         if (childrenList[i].hasChildren) {

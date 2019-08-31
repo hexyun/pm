@@ -136,7 +136,7 @@ export default {
     },
     selected(list, item) {
       this.selectItem=item;
-      console.log(item)
+      // console.log(item)
     },
     changeDone(list, item) {
       console.log(item.finish_time);
@@ -159,17 +159,23 @@ export default {
         if(this.selectItem.father_id){
           item={
             father_id:this.selectItem.father_id,
-            _id:new Date().getTime()
+            _id:new Date().getTime(),
+          create_time:new Date().getTime(),
+          leader_uid:0
           }
         }else{
           item={
-            _id:new Date().getTime()
+            _id:new Date().getTime(),
+          create_time:new Date().getTime(),
+          leader_uid:0
           }
         }
       }else{
         item={
           father_id:this.selectItem._id,
-          _id:new Date().getTime()
+          _id:new Date().getTime(),
+          create_time:new Date().getTime(),
+          leader_uid:0
         }
       }
       this.$refs.listtwo.addTask(item);
