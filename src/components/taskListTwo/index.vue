@@ -382,6 +382,96 @@ export default {
       }
       return result;
     },
+    // 合并数据
+    mergeData() {
+      // 创建一个空数组
+      var list = this.task;
+      var arr = [];
+      // 如果有时间戳
+      if (this.timeStamp) {
+        console.log("tasklistv2数据合并");
+        // 获取本地存储
+        arr = memory.get("hex_" + this.listId);
+        // 遍历新增数据
+        for (let i = 0; i < list.length; i++) {
+          // 遍历渲染数组，查找有没有同一条数据的id
+          var target = arr.filter((item, index) => {
+            if (list[i]._id == item._id) {
+              // 如果removed，是删除的数据
+              if (list[i].removed > 0) {
+                arr.splice(index, 1);
+              } else {
+                // 如果没有removed，是修改的
+                arr.splice(index, 1, list[i]);
+              }
+              return true;
+            } else {
+              return false;
+            }
+          });
+          // 如果没有的话，证明是新添加的数据
+          if (!target || !target.length) {
+            arr.forEach((item, index) => {
+              if (item._id == list[i].father_id) {
+                arr.insert(index + 1, list[i]);
+              }
+            });
+          }
+        }
+        for (let i = 0; i < arr.length; i++) {
+          arr[i].isShow = true;
+        }
+        this.mergedData = arr;
+      } else {
+        console.log("tasklistv2数据覆盖");
+        for (let i = 0; i < list.length; i++) {
+          list[i].isShow = true;
+        }
+        this.mergedData = list;
+      }
+      // 排序
+      this.mergedData = this.taskListSort(this.mergedData);
+      this.mergedDataCopy = this.deepCopy(this.mergedData);
+      console.log("tasklistv2数据合并覆盖成功");
+      // 存缓存
+      this.setMemory();
+    },
+    // 操作缓存
+    setMemory() {
+      // 把数据存入缓存
+      memory.set("hex_" + this.listId, this.mergedData);
+      // 如果缓存满了，给个提示
+      console.log("tasklistv2存入缓存");
+      if (!memory.set("hex_" + this.listId, this.mergedData)) {
+        console.log("tasklistv2缓存已经满了，请重新加载");
+      }
+      // 存储一个字典
+      var taskSlist = memory.get("taskSlist");
+      // 如果有这个字典
+      if (taskSlist) {
+        // 如果字典内没有这个id
+        if (taskSlist.indexOf(this.listId) == -1) {
+          // 如果字典长度没超过5，直接加上
+          if (taskSlist.length < 5) {
+            taskSlist.push(this.listId);
+            memory.set("taskSlist", taskSlist);
+            console.log("tasklistv2更新缓存字典成功");
+          } else {
+            // 如果超过了，删除第一个
+            let a = taskSlist[0];
+            taskSlist.push(this.listId);
+            taskSlist.shift();
+            memory.remove("hex_" + a);
+            memory.set("taskSlist", taskSlist);
+            console.log("tasklistv2替换缓存字典成功");
+          }
+        }
+      } else {
+        // 如果没有，创建字典
+        memory.set("taskSlist", [this.listId]);
+        console.log("tasklistv2创建缓存字典成功");
+      }
+    },
     //排序接口
     taskListSortControl(type, fil) {
       // 排序数据，回复滚动条
@@ -645,96 +735,48 @@ export default {
     sortToTime(time) {
       return new Date(time).toJSON().substr(0, 10);
     },
-    // 合并数据
-    mergeData() {
-      // 创建一个空数组
-      var list = this.task;
-      var arr = [];
-      // 如果有时间戳
-      if (this.timeStamp) {
-        console.log("tasklistv2数据合并");
-        // 获取本地存储
-        arr = memory.get("hex_" + this.listId);
-        // 遍历新增数据
-        for (let i = 0; i < list.length; i++) {
-          // 遍历渲染数组，查找有没有同一条数据的id
-          var target = arr.filter((item, index) => {
-            if (list[i]._id == item._id) {
-              // 如果removed，是删除的数据
-              if (list[i].removed > 0) {
-                arr.splice(index, 1);
-              } else {
-                // 如果没有removed，是修改的
-                arr.splice(index, 1, list[i]);
-              }
-              return true;
-            } else {
-              return false;
-            }
-          });
-          // 如果没有的话，证明是新添加的数据
-          if (!target || !target.length) {
-            arr.forEach((item, index) => {
-              if (item._id == list[i].father_id) {
-                arr.insert(index + 1, list[i]);
-              }
-            });
-          }
-        }
-        for (let i = 0; i < arr.length; i++) {
-          arr[i].isShow = true;
-        }
-        this.mergedData = arr;
-      } else {
-        console.log("tasklistv2数据覆盖");
-        for (let i = 0; i < list.length; i++) {
-          list[i].isShow = true;
-        }
-        this.mergedData = list;
-      }
-      // 排序
-      this.mergedData = this.taskListSort(this.mergedData);
-      this.mergedDataCopy = this.deepCopy(this.mergedData);
-      console.log("tasklistv2数据合并覆盖成功");
-      // 存缓存
-      this.setMemory();
+    // 滚动事件，调用更新位置
+    handleScroll() {
+      // 滚动的时候执行列表更新事件
+      var scrollTop = event.target.scrollTop;
+      
+      this.updateVisibleData(scrollTop);
     },
-    // 操作缓存
-    setMemory() {
-      // 把数据存入缓存
-      memory.set("hex_" + this.listId, this.mergedData);
-      // 如果缓存满了，给个提示
-      console.log("tasklistv2存入缓存");
-      if (!memory.set("hex_" + this.listId, this.mergedData)) {
-        console.log("tasklistv2缓存已经满了，请重新加载");
-      }
-      // 存储一个字典
-      var taskSlist = memory.get("taskSlist");
-      // 如果有这个字典
-      if (taskSlist) {
-        // 如果字典内没有这个id
-        if (taskSlist.indexOf(this.listId) == -1) {
-          // 如果字典长度没超过5，直接加上
-          if (taskSlist.length < 5) {
-            taskSlist.push(this.listId);
-            memory.set("taskSlist", taskSlist);
-            console.log("tasklistv2更新缓存字典成功");
-          } else {
-            // 如果超过了，删除第一个
-            let a = taskSlist[0];
-            taskSlist.push(this.listId);
-            taskSlist.shift();
-            memory.remove("hex_" + a);
-            memory.set("taskSlist", taskSlist);
-            console.log("tasklistv2替换缓存字典成功");
-          }
+    // 更新列表和计算位置
+    updateVisibleData(scrollTop) {
+      scrollTop = scrollTop || this.$els.tasklisttwo.scrollTop;
+      // 计算父级元素能渲染几个dom
+      
+      const visibleCount = Math.ceil(
+        this.$els.tasklisttwo.offsetHeight / this.itemsHeight
+      );
+      this.halfTask = Math.floor(
+        this.$els.tasklisttwo.offsetHeight / this.itemsHeight / 2
+      );
+      // 根据滚动条计算第一个元素应该是哪个
+      this.start = Math.floor(scrollTop / this.itemsHeight);
+      this.end = this.start + visibleCount;
+      for (let i = this.start; i < this.end; i++) {
+        if (this.mergedData[i] && this.mergedData[i].isShow === false) {
+          this.end++;
         }
-      } else {
-        // 如果没有，创建字典
-        memory.set("taskSlist", [this.listId]);
-        console.log("tasklistv2创建缓存字典成功");
       }
+       // 获取需要渲染的列表
+      this.visibleData = this.mergedData.slice(this.start, this.end);
+      // 清除 visibleDate 中不显示的元素
+      this.visibleData = this.visibleData.filter( (item) => {
+        if (item.type === 'label') return true;
+        return item.isShow;
+      });
+      // this.mergedData = this.mergedData.filter( (item) => {
+      //   if (item.type === 'label') return true;
+      //   return item.isShow;
+      // });
+      // 更改滚动元素的偏移值
+      this.$els.content.style.webkitTransform = `translateY(${(this.start) *
+        this.itemsHeight}px)`;
     },
+
     // 获取指定id元素和更改指定id属性
     changeGetItem(id, k, v) {
       var ind = 0;
@@ -896,47 +938,6 @@ export default {
         }
       });
       return arr;
-    },
-    // 滚动事件，调用更新位置
-    handleScroll() {
-      // 滚动的时候执行列表更新事件
-      var scrollTop = event.target.scrollTop;
-      
-      this.updateVisibleData(scrollTop);
-    },
-    // 更新列表和计算位置
-    updateVisibleData(scrollTop) {
-      scrollTop = scrollTop || this.$els.tasklisttwo.scrollTop;
-      // 计算父级元素能渲染几个dom
-      
-      const visibleCount = Math.ceil(
-        this.$els.tasklisttwo.offsetHeight / this.itemsHeight
-      );
-      this.halfTask = Math.floor(
-        this.$els.tasklisttwo.offsetHeight / this.itemsHeight / 2
-      );
-      // 根据滚动条计算第一个元素应该是哪个
-      this.start = Math.floor(scrollTop / this.itemsHeight);
-      this.end = this.start + visibleCount;
-      for (let i = this.start; i < this.end; i++) {
-        if (this.mergedData[i] && this.mergedData[i].isShow === false) {
-          this.end++;
-        }
-      }
-       // 获取需要渲染的列表
-      this.visibleData = this.mergedData.slice(this.start, this.end);
-      // 清除 visibleDate 中不显示的元素
-      this.visibleData = this.visibleData.filter( (item) => {
-        if (item.type === 'label') return true;
-        return item.isShow;
-      });
-      // this.mergedData = this.mergedData.filter( (item) => {
-      //   if (item.type === 'label') return true;
-      //   return item.isShow;
-      // });
-      // 更改滚动元素的偏移值
-      this.$els.content.style.webkitTransform = `translateY(${(this.start) *
-        this.itemsHeight}px)`;
     },
     // 选中指定id
     selectId(id) {
