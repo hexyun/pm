@@ -430,8 +430,8 @@ export default {
         this.mergedData = list;
       }
       // 排序
-      this.mergedData = this.taskListSort(this.mergedData);
       this.mergedDataCopy = this.deepCopy(this.mergedData);
+      this.taskListSortControl();
       console.log("tasklistv2数据合并覆盖成功");
       // 存缓存
       this.setMemory();
@@ -598,7 +598,7 @@ export default {
             if (children.length) {
               v.hasChildren = true;
               v.isOpen = true;
-              self.sortData(children,'_id').map((item, index) => {
+              self.sortData(children,'create_time').reverse().map((item, index) => {
                 // 拼接序列号
                 item.positionInd = positionInd + "." + (index + 1);
                 arr.push(item);
@@ -619,7 +619,7 @@ export default {
             }
           }
           // 遍历第一级任务，并获取所有子集任务
-          listOne=this.sortData(listOne,'_id').reverse()
+          listOne=this.sortData(listOne,'create_time').reverse()
           for (let i = 0; i < listOne.length; i++) {
             // 赋值序列号
             listOne[i].positionInd = i + 1;
@@ -633,7 +633,7 @@ export default {
           }
           break;
       }
-      this.updateVisibleData();
+      // this.updateVisibleData();
       return arr;
     },
     sortData(list, key) {
