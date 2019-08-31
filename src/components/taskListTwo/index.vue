@@ -1,3 +1,9 @@
+/*
+ * @Author: yangzhenfeng 
+ * @Date: 2019-08-31 20:52:26 
+ * @Last Modified by: yangzhenfeng
+ * @Last Modified time: 2019-08-31 21:04:47
+ */
 <style lang="less" scoped>
 .task-list-two {
   width: 100%;
@@ -302,13 +308,11 @@ export default {
     return {
       visibleData: [],
       itemsHeight: 30,
-      onoff: true,
       searchListShow: false,
       selectXY: { left: 0, top: 0 },
       preTitle: "",
       mergedData: [],
       mergedDataCopy: [],
-      dataType: "",
       halfTask: 0,
       start: 0,
       end: 10

@@ -131,8 +131,8 @@ export default {
     changeId() {
       this.$refs.listtwo.changeGetItem(
         "5d53eabd7b846b3ff53dbe69",
-        "task_name",
-        "修改后的标题"
+        "finish_time",
+        0
       );
     },
     selected(list, item) {

@@ -1,62 +1,18 @@
-# Vue stage view
+###任务列表2的数据逻辑
 
-该组件主要解决大量图片展示的问题， 并且在图片选中和查看时候提供交互能力 [demo]
+task更新数据》mergeData合并缓存》mergedDataCopy深拷贝》taskListSortControl，根据mergedDataCopy排序，排序结果是mergedData》updateVisibleData更新视图
 
-## 特性
+###需要注意
+如果更改数据的同时进行了排序（添加，删除），那就不用更改mergedData，排序方法会自动更改，如果没有进行排序就都需要更改*（任务完成等状态），组件内部方法changeGetItem/changeGetChildrenItem是封装好用来更改指定id和子级的方法，直接调用就会更改两个数据
 
-- [x] 界面支持拖拽
-- [ ] 图片懒加载
-- [ ] 大图（详情）支持拖拽
-- [ ] 大图（详情）支持上下切换图
+###关于排序
+默认排序如果不需要回复滚动条，就不需要传参数，需要回复滚动条就传个default
 
-## 安装
+###关于缓存
+最多存储5个列表数据，防止缓存爆掉，先入先出
 
-```
-yarn add vue-stage-view
-npm install vue-stage-view
-```
+###关于负责人修改
+没有更改的内容不会触发修改事件
 
-## 使用
-```vue
-<stage-view :list="list" key="url"></stage-view>
-```
-
-### props说明
-
-- list 图片数组， 其中为对象形式
-- key 图片地址对应的字段
-
-[具体使用可参考](./examples)
-       
-## 开发和贡献
-
-目前主要用于vue1.0项目中，感兴趣可升级为2.0版本，甚至以后3.0版本
-
-## 版本规范
-
-### 分支规范 
-
-- master 为 vue1.0版本
-- 2.x 为 vue2.x版本
-- 3.x 为 vue3.x版本
-
-### npm包规范
-
-- 2.x 为vue2.x版本
-
-## 文件说明
-
-```
-├── __test__  测试dist包运行
-├── assets 资源文件
-├── build build脚本
-├── dist 生产环境目录
-├── docs 预览demo目录
-├── examples 预览demo源码，便于本地开发
-├── src 核心源代码
-```
-
-
-##问题梳理
-序号：vue遍历出现问题，先隐藏
-位移：需要时间
+###关于滚动
+添加删除在没有超过屏幕范围是不会触发自动滚动，超出范围会自动滚动到中间位置
