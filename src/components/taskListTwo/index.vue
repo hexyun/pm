@@ -474,11 +474,16 @@ export default {
     //排序接口
     taskListSortControl(type, fil) {
       // 排序数据，给显示的数据赋值
+      var self = this;
       this.mergedData = this.taskListSort(this.mergedDataCopy, type, fil);
-      // 滚动到最上
-      this.$els.tasklisttwo.scrollTo(0, 1);
+      // 如果是type更新，滚动到最上
+      if (type) {
+        this.$els.tasklisttwo.scrollTo(0, 1);
+      }
       // 更新视图
-      this.updateVisibleData();
+      Vue.nextTick(function() {
+        self.updateVisibleData();
+      });
     },
     // 排序事件
     taskListSort(list, type, fil) {
@@ -749,6 +754,7 @@ export default {
       // 截取日期
       return new Date(time).toJSON().substr(0, 10);
     },
+
     // 滚动事件，调用更新位置
     handleScroll() {
       // 滚动的时候执行列表更新事件
@@ -798,7 +804,9 @@ export default {
           if (id && k) {
             // 如果有k，更改相应的数据，显示的和备份的都要改
             Vue.set(item, k, v);
-            this.mergedDataCopy.find(itemCopy => itemCopy._id == id ? Vue.set(itemCopy, k, v) : null);
+            this.mergedDataCopy.find(itemCopy =>
+              itemCopy._id == id ? Vue.set(itemCopy, k, v) : null
+            );
           }
           ind = index;
           return true;
@@ -846,10 +854,35 @@ export default {
         tarArr.forEach(item => {
           Vue.set(item, k, v);
           // 找到跟显示数据相同的这个数据并更改
-          this.mergedDataCopy.find(itemCopy => itemCopy._id == item._id ? Vue.set(itemCopy, k, v) : null);
+          this.mergedDataCopy.find(itemCopy =>
+            itemCopy._id == item._id ? Vue.set(itemCopy, k, v) : null
+          );
         });
       }
       return tarArr;
+    },
+    // 选中指定id
+    selectId(id) {
+      // 调用获取任务方法，如果能找到调用选中触发的方法
+      this.changeGetItem(id)
+        ? this.selectThis(this.changeGetItem(id)[0])
+        : null;
+    },
+    //滚动到指定id的位置
+    scrollTo(id) {
+      // 调用获取任务方法
+      var a = this.changeGetItem(id);
+      if (a) {
+        var tarTask = 0;
+        // 如果目标减去一屏任务的一般《0，第一个就是0
+        if (a[1] - this.halfTask < 0) {
+          tarTask = 0;
+        } else {
+          tarTask = a[1] - this.halfTask;
+        }
+        // 控制滚动条滚动到相应位置
+        this.$els.tasklisttwo.scrollTo(0, tarTask * this.itemsHeight);
+      }
     },
 
     // 增加任务
@@ -861,7 +894,6 @@ export default {
       } else {
         // 添加数据
         addItem.isShow = true;
-        this.mergedData.push(addItem);
         this.mergedDataCopy.push(addItem);
         // 排序数据
         this.taskListSortControl();
@@ -869,15 +901,10 @@ export default {
         this.selectThis(addItem);
         // 延迟更改滚动，等到计算完成后
         Vue.nextTick(function() {
-          if (
-            self.changeGetItem(addItem._id)[1] >= self.start &&
-            self.changeGetItem(addItem._id)[1] < self.end
-          ) {
-            // self.updateVisibleData();
-          } else {
-            self.scrollTo(addItem._id);
-          }
-          // 重新截取
+          self.changeGetItem(addItem._id)[1] < self.start ||
+          self.changeGetItem(addItem._id)[1] >= self.end - 1
+            ? self.scrollTo(addItem._id)
+            : null;
         });
       }
     },
@@ -885,6 +912,7 @@ export default {
     delTask(id) {
       var targetId = id;
       var father = "";
+      var son = [];
       var next = {};
       var self = this;
       // 是否传了id
@@ -892,7 +920,7 @@ export default {
         // 没指定id，操作当前选中项目
         targetId = this.selectItem._id;
       }
-      // 找到fatherid
+      // 找到fatherid，判断下一个应该是哪个任务
       if (this.changeGetItem(targetId)) {
         // 获得fatherid,第一级的id是undefined
         father = this.changeGetItem(targetId)[0].father_id || undefined;
@@ -932,60 +960,31 @@ export default {
           }
         }
       }
-
-      // 切掉数据
-      // function spliceChildren(list, id) {
-      //   var child=list.filter((item, index) => {
-      //     if (item._id == id || item.father_id == id) {
-      //       list.splice(index, 1);
-      //       spliceChildren(list,item._id)
-      //     }
-      //   });
-      // }
-      // spliceChildren(this.mergedDataCopy, targetId);
-      // this.mergedDataCopy.filter((item,index)=>{
-      //   if(item._id==targetId){
-      //     this.mergedDataCopy.splice(index,1)
-      //   }
-      // })
-      // function spliceChildren(list,id){
-      //   list.filter((item,index)=>{
-      //     if(item.father_id==id){
-      //       var tar=list.splice(index,1)
-      //       spliceChildren(list,tar._id)
-      //     }
-      //   })
-      // }
-      // spliceChildren(this.mergedDataCopy,targetId)
-
-      this.mergedData.filter((item, index) => {
-        if (item._id == targetId) {
-          // 找到并切掉对应的
-          this.mergedData.splice(index, 1);
-          // 重新排序
-          //this.mergedData = this.taskListSort(this.mergedDataCopy);
-        }
+      // 获取它的所有子任务
+      son = this.changeGetChildrenItem(targetId);
+      // 找到并切掉子任务和当前任务
+      son.forEach(sonitem => {
+        this.mergedDataCopy.filter((item, index) => {
+          if (item._id == sonitem._id || item._id == targetId) {
+            // 找到并切掉对应的
+            this.mergedDataCopy.splice(index, 1);
+          }
+        });
       });
+      // console.log(this.mergedDataCopy);
+      // 排序
       this.taskListSortControl();
-      console.log(123, this.mergedDataCopy);
-      console.log(this.mergedData);
       // 赋值下个选中的项目和滚动
       this.selectThis(next);
       // 更新截取数据
-      if (self.mergedData.length) {
-        if (
-          self.changeGetItem(next._id) &&
-          self.changeGetItem(next._id)[1] >= self.start &&
-          self.changeGetItem(next._id)[1] < self.end
-        ) {
-          // self.updateVisibleData();
-        } else {
-          self.scrollTo(next._id);
-        }
-      } else {
-        self.$els.tasklisttwo.scrollBy(0, 1);
+      if (this.mergedDataCopy && this.mergedDataCopy.length) {
+        self.changeGetItem(next._id)[1] < self.start ||
+        self.changeGetItem(next._id)[1] >= self.end - 1
+          ? self.scrollTo(next._id)
+          : null;
       }
     },
+    
     //过滤事件
     filterValue(val) {
       var arr = this.mergedData.filter(item => {
@@ -994,26 +993,6 @@ export default {
         }
       });
       return arr;
-    },
-    // 选中指定id
-    selectId(id) {
-      var a = this.changeGetItem(id);
-      if (a) {
-        this.selectThis(a[0]);
-      }
-    },
-    //滚动到指定id的位置
-    scrollTo(id) {
-      var a = this.changeGetItem(id);
-      if (a) {
-        var tarTask = 0;
-        if (a[1] - this.halfTask < 0) {
-          tarTask = 0;
-        } else {
-          tarTask = a[1] - this.halfTask;
-        }
-        this.$els.tasklisttwo.scrollTo(0, tarTask * this.itemsHeight);
-      }
     },
     // 选中触发事件
     selectThis(item) {
