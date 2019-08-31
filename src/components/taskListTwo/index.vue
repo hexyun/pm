@@ -984,7 +984,7 @@ export default {
           : null;
       }
     },
-    
+
     //过滤事件
     filterValue(val) {
       var arr = this.mergedData.filter(item => {
@@ -1004,9 +1004,9 @@ export default {
     changeDone(item) {
       var self = this;
       if (item.finish_time) {
-        Vue.set(item, "finish_time", null);
+        this.changeGetItem(item._id,"finish_time", null)
       } else {
-        Vue.set(item, "finish_time", new Date().getTime());
+        this.changeGetItem(item._id,"finish_time", new Date().getTime())
       }
       this.$emit("check-change_" + self.mainid, this.mergedData, item);
     },
@@ -1018,6 +1018,7 @@ export default {
     changeTitle(item) {
       var self = this;
       if (item.task_name !== this.preTitle) {
+        this.changeGetItem(item._id,"task_name", item.task_name)
         this.$emit("title-change_" + self.mainid, this.mergedData, item);
       }
     },
@@ -1077,12 +1078,11 @@ export default {
     // 初始化
     Vue.nextTick(function() {
       self.mergeData();
-      // self.updateVisibleData();
       self.$emit("loaded-change_" + self.mainid);
     });
     // 负责人更改
     VueEvent.$on("charge-change_" + self.mainid, function(item) {
-      Vue.set(self.selectItem, "leader_uid", item.user_id);
+      self.changeGetItem(self.selectItem._id,"leader_uid", item.user_id)
       self.searchListShow = false;
       self.$emit("charge-change_" + self.mainid, self.selectItem, item);
     });
