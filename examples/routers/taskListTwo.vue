@@ -108,6 +108,7 @@ export default {
   methods: {
     getChildren(){
       var a=this.$refs.listtwo.changeGetChildrenItem("5d53e0e313c5491b655c5027",'deadline',123);
+      console.log(a)
     },
     // v2
     changeTasksss(){
