@@ -2,7 +2,7 @@
  * @Author: yangzhenfeng 
  * @Date: 2019-08-31 20:52:26 
  * @Last Modified by: yangzhenfeng
- * @Last Modified time: 2019-08-31 21:04:47
+ * @Last Modified time: 2019-09-01 11:21:05
  */
 <style lang="less" scoped>
 .task-list-two {
@@ -924,6 +924,7 @@ export default {
         // 没指定id，操作当前选中项目
         targetId = this.selectItem._id;
       }
+
       // 找到fatherid，判断下一个应该是哪个任务
       if (this.changeGetItem(targetId)) {
         // 获得fatherid,第一级的id是undefined
@@ -967,15 +968,21 @@ export default {
       // 获取它的所有子任务
       son = this.changeGetChildrenItem(targetId);
       // 找到并切掉子任务和当前任务
+      this.mergedDataCopy.filter((item, index) => {
+        if (item._id == targetId) {
+          // 找到并切掉对应的
+          this.mergedDataCopy.splice(index, 1);
+        }
+      });
       son.forEach(sonitem => {
         this.mergedDataCopy.filter((item, index) => {
-          if (item._id == sonitem._id || item._id == targetId) {
+          if (item._id == sonitem._id) {
             // 找到并切掉对应的
             this.mergedDataCopy.splice(index, 1);
           }
         });
       });
-      // console.log(this.mergedDataCopy);
+      console.log(this.mergedDataCopy);
       // 排序
       this.taskListSortControl();
       // 赋值下个选中的项目和滚动
@@ -1008,9 +1015,9 @@ export default {
     changeDone(item) {
       var self = this;
       if (item.finish_time) {
-        this.changeGetItem(item._id,"finish_time", null)
+        this.changeGetItem(item._id, "finish_time", null);
       } else {
-        this.changeGetItem(item._id,"finish_time", new Date().getTime())
+        this.changeGetItem(item._id, "finish_time", new Date().getTime());
       }
       this.$emit("check-change_" + self.mainid, this.mergedData, item);
     },
@@ -1022,7 +1029,7 @@ export default {
     changeTitle(item) {
       var self = this;
       if (item.task_name !== this.preTitle) {
-        this.changeGetItem(item._id,"task_name", item.task_name)
+        this.changeGetItem(item._id, "task_name", item.task_name);
         this.$emit("title-change_" + self.mainid, this.mergedData, item);
       }
     },
@@ -1086,7 +1093,7 @@ export default {
     });
     // 负责人更改
     VueEvent.$on("charge-change_" + self.mainid, function(item) {
-      self.changeGetItem(self.selectItem._id,"leader_uid", item.user_id)
+      self.changeGetItem(self.selectItem._id, "leader_uid", item.user_id);
       self.searchListShow = false;
       self.$emit("charge-change_" + self.mainid, self.selectItem, item);
     });
