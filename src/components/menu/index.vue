@@ -27,13 +27,15 @@
   width:20%;
 }
 .item{
-  line-height:28px;
+  line-height:33px;
   height: 33px;
   font-size:12px;
   color:#1d1f1f;
   border-top:1px solid #ededed; 
   cursor:pointer;
   padding:2px 0 2px 15px;
+  box-sizing:border-box;
+  overflow:hidden;
   list-style: decimal inside !important;
   position: relative;
   .itemWrap{
@@ -59,6 +61,7 @@
         vertical-align: middle;
         position:relative;
         margin: auto;
+        flex-shrink: 0;
       }
       .inds{
         font-size: 12px;
@@ -81,6 +84,7 @@
       .title {
         margin-left:2px;
         flex-grow:1;
+        line-height:33px;
         input {
           line-height: 30px;
           height: 30px;
