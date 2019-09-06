@@ -1,8 +1,8 @@
 /*
  * @Author: yangzhenfeng 
  * @Date: 2019-08-31 20:52:26 
- * @Last Modified by: yangzhenfeng
- * @Last Modified time: 2019-09-01 11:21:05
+ * @Last Modified by: 杨振峰
+ * @Last Modified time: 2019-09-06 11:49:48
  */
 <style lang="less" scoped>
 .task-list-two {
@@ -29,7 +29,6 @@
       cursor: pointer;
       .itemIndex {
         font-size: 10px;
-        width: 15px;
         padding: 0 5px;
         color: #cccccc;
       }
@@ -655,7 +654,8 @@ export default {
       return arr;
     },
     sortData(list, key) {
-      // 感觉不同的排序类型，对空进行处理
+      // 大到小排序
+      // 根据不同的排序类型，对空进行处理
       var none = ".";
       if (key == "create_time" || key == "deadline" || key == "finish_time") {
         none = 0;
