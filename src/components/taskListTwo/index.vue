@@ -2,7 +2,7 @@
  * @Author: yangzhenfeng 
  * @Date: 2019-08-31 20:52:26 
  * @Last Modified by: 杨振峰
- * @Last Modified time: 2019-09-06 11:49:48
+ * @Last Modified time: 2019-09-09 16:50:15
  */
 <style lang="less" scoped>
 .task-list-two {
@@ -245,6 +245,7 @@
                 :readonly="!isTitleChange"
                 @focus="savePreTitle(listItem.task_name)"
                 @blur="changeTitle(listItem)"
+                placeholder='任务名称'
               />
             </div>
             <div class="right">
