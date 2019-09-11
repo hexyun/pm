@@ -2,7 +2,7 @@
  * @Author: yangzhenfeng 
  * @Date: 2019-08-31 20:52:26 
  * @Last Modified by: 杨振峰
- * @Last Modified time: 2019-09-09 16:50:15
+ * @Last Modified time: 2019-09-11 16:12:41
  */
 <style lang="less" scoped>
 .task-list-two {
@@ -413,11 +413,12 @@ export default {
           });
           // 如果没有的话，证明是新添加的数据
           if (!target || !target.length) {
-            arr.forEach((item, index) => {
-              if (item._id == list[i].father_id) {
-                arr.insert(index + 1, list[i]);
-              }
-            });
+            // arr.forEach((item, index) => {
+            //   if (item._id == list[i].father_id) {
+            //     arr.insert(index + 1, list[i]);
+            //   }
+            // });
+            arr.push(list[i]);
           }
         }
         for (let i = 0; i < arr.length; i++) {
