@@ -2,7 +2,7 @@
  * @Author: yangzhenfeng 
  * @Date: 2019-08-31 20:52:26 
  * @Last Modified by: 杨振峰
- * @Last Modified time: 2019-09-11 16:12:41
+ * @Last Modified time: 2019-09-16 18:32:12
  */
 <style lang="less" scoped>
 .task-list-two {
@@ -40,6 +40,7 @@
         margin: auto 0;
         margin-left: 2px;
         position: relative;
+        flex-shrink: 0;
       }
 
       .rank {
@@ -93,7 +94,7 @@
       .right {
         display: flex;
         padding-left: 10px;
-        min-width: 10rem;
+        flex-shrink: 0;
         .time {
           margin-right: 5px;
           overflow: hidden;
@@ -211,6 +212,7 @@
           track-by="$index"
           class="list-item"
           :class="{'done':listItem.finish_time,'selected':selectItem._id==listItem._id&&listItem.type!=='label'}"
+          :id="'c'+listItem._id"
           :key="index"
           @click="selectThis(listItem)"
           v-show="typeof listItem.show === 'undefined' || listItem.isShow"
@@ -243,9 +245,11 @@
                 type="text"
                 v-model="listItem.task_name"
                 :readonly="!isTitleChange"
+                :id="'c'+listItem._id+'_input'"
                 @focus="savePreTitle(listItem.task_name)"
                 @blur="changeTitle(listItem)"
-                placeholder='任务名称'
+                placeholder="任务名称"
+                v-el:taskName
               />
             </div>
             <div class="right">
@@ -315,7 +319,8 @@ export default {
       mergedDataCopy: [],
       halfTask: 0,
       start: 0,
-      end: 10
+      end: 10,
+      lastInput:''
     };
   },
   filters: {
@@ -362,6 +367,9 @@ export default {
   },
   watch: {
     task: function() {
+      if(task === undefined){
+        task=[];
+      }
       // 每次task改变的时候动态合并数据，同时更新一下视图防止卡顿，触发加载完成事件
       console.log("tasklistv2task更改成功");
       this.mergeData();
@@ -442,13 +450,20 @@ export default {
     },
     // 操作缓存
     setMemory() {
+      var self = this;
       // 把数据存入缓存
       memory.set("hex_" + this.listId, this.mergedData);
       // 如果缓存满了，给个提示
       console.log("tasklistv2存入缓存");
       if (!memory.set("hex_" + this.listId, this.mergedData)) {
         console.log("tasklistv2缓存已经满了，请重新加载");
+        this.$emit(
+          "memory-out_" + self.mainid,
+          "hex_" + this.listId,
+          this.mergedData
+        );
       }
+
       // 存储一个字典
       var taskSlist = memory.get("taskSlist");
       // 如果有这个字典
@@ -901,16 +916,17 @@ export default {
         // 添加数据
         addItem.isShow = true;
         this.mergedDataCopy.push(addItem);
-        // 排序数据
-        this.taskListSortControl();
-        // 更改选中
-        this.selectThis(addItem);
         // 延迟更改滚动，等到计算完成后
+        self.taskListSortControl();
         Vue.nextTick(function() {
+          // 排序数据
+          // 判断是否需要滚动
           self.changeGetItem(addItem._id)[1] < self.start ||
           self.changeGetItem(addItem._id)[1] >= self.end - 1
             ? self.scrollTo(addItem._id)
             : null;
+          // 更改选中
+          self.selectThis(addItem);
         });
       }
     },
@@ -984,7 +1000,6 @@ export default {
           }
         });
       });
-      console.log(this.mergedDataCopy);
       // 排序
       this.taskListSortControl();
       // 赋值下个选中的项目和滚动
@@ -1010,7 +1025,19 @@ export default {
     // 选中触发事件
     selectThis(item) {
       var self = this;
+      if(self.lastInput){
+        var tar=document.getElementById("c" + self.lastInput + "_input");
+        tar?tar.blur():null;
+      }
       this.selectItem = item;
+      self.lastInput = item._id;
+      // var targetInput = document.querySelector("#c" + item._id + "_input");
+      Vue.nextTick(function() {
+        setTimeout(function(){
+          var targetInput = document.getElementById("c" + item._id + "_input");
+          targetInput?targetInput.focus():null;
+        },200)
+      });
       this.$emit("select-item_" + self.mainid, this.mergedData, item);
     },
     // 完成触发事件

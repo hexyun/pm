@@ -38,6 +38,7 @@
       @title-change_qwertyuiop="changeTitle"
       @charge-change_qwertyuiop="chargeChange"
       @loaded-change_qwertyuiop="loadedChange"
+      @memory-out_qwertyuiop='memoryOut'
     ></task-list-two>
   </div>
 </template>
@@ -186,6 +187,9 @@ export default {
     },
     filtersValue(){
       console.log(this.$refs.listtwo.filterValue(this.filters));
+    },
+    memoryOut(a,b){
+      console.log(a,b)
     }
   }
 };
