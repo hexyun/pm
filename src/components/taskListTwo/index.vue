@@ -2,7 +2,7 @@
  * @Author: yangzhenfeng 
  * @Date: 2019-08-31 20:52:26 
  * @Last Modified by: 杨振峰
- * @Last Modified time: 2019-09-16 18:32:12
+ * @Last Modified time: 2019-09-17 11:35:33
  */
 <style lang="less" scoped>
 .task-list-two {
@@ -367,8 +367,9 @@ export default {
   },
   watch: {
     task: function() {
-      if(task === undefined){
-        task=[];
+      if(this.task === undefined){
+        this.task=[];
+        return;
       }
       // 每次task改变的时候动态合并数据，同时更新一下视图防止卡顿，触发加载完成事件
       console.log("tasklistv2task更改成功");
@@ -1027,7 +1028,7 @@ export default {
       var self = this;
       if(self.lastInput){
         var tar=document.getElementById("c" + self.lastInput + "_input");
-        tar?tar.blur():null;
+        tar&&tar.blur?tar.blur():null;
       }
       this.selectItem = item;
       self.lastInput = item._id;
@@ -1035,7 +1036,7 @@ export default {
       Vue.nextTick(function() {
         setTimeout(function(){
           var targetInput = document.getElementById("c" + item._id + "_input");
-          targetInput?targetInput.focus():null;
+          targetInput&&targetInput.focus?targetInput.focus():null;
         },200)
       });
       this.$emit("select-item_" + self.mainid, this.mergedData, item);

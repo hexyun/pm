@@ -114,7 +114,7 @@ export default {
     // v2
     changeTasksss(){
       this.timeStamp = 0;
-       this.task = [];
+      this.task = list2;
     },
     changeTask() {
       this.timeStamp = 123;
