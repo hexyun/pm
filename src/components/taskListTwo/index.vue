@@ -2,7 +2,7 @@
  * @Author: yangzhenfeng 
  * @Date: 2019-08-31 20:52:26 
  * @Last Modified by: 杨振峰
- * @Last Modified time: 2019-09-17 11:35:33
+ * @Last Modified time: 2019-09-30 13:34:22
  */
 <style lang="less" scoped>
 .task-list-two {
@@ -213,7 +213,7 @@
           class="list-item"
           :class="{'done':listItem.finish_time,'selected':selectItem._id==listItem._id&&listItem.type!=='label'}"
           :id="'c'+listItem._id"
-          :key="index"
+          :key="'c'+listItem._id"
           @click="selectThis(listItem)"
           v-show="typeof listItem.show === 'undefined' || listItem.isShow"
         >
@@ -320,7 +320,7 @@ export default {
       halfTask: 0,
       start: 0,
       end: 10,
-      lastInput:''
+      lastInput: ""
     };
   },
   filters: {
@@ -367,13 +367,12 @@ export default {
   },
   watch: {
     task: function() {
-      if(this.task === undefined){
-        this.task=[];
-        return;
+      if (Array.isArray(this.task)) {
+        this.mergeData();
+        console.log("tasklistv2task更改成功");
+      } else {
+        console.log("请确认数据是否正确,数据不是一个数组");
       }
-      // 每次task改变的时候动态合并数据，同时更新一下视图防止卡顿，触发加载完成事件
-      console.log("tasklistv2task更改成功");
-      this.mergeData();
       this.$emit("loaded-change_" + this.mainid);
     }
   },
@@ -404,36 +403,41 @@ export default {
         // 获取本地存储
         arr = memory.get("hex_" + this.listId);
         // 遍历新增数据
-        for (let i = 0; i < list.length; i++) {
-          // 遍历渲染数组，查找有没有同一条数据的id
-          var target = arr.filter((item, index) => {
-            if (list[i]._id == item._id) {
-              // 如果removed，是删除的数据
-              if (list[i].removed > 0) {
-                arr.splice(index, 1);
+        if (list.length) {
+          for (let i = 0; i < list.length; i++) {
+            // 遍历渲染数组，查找有没有同一条数据的id
+            var target = arr.filter((item, index) => {
+              if (list[i]._id == item._id) {
+                // 如果removed，是删除的数据
+                if (list[i].removed > 0) {
+                  arr.splice(index, 1);
+                } else {
+                  // 如果没有removed，是修改的
+                  arr.splice(index, 1, list[i]);
+                }
+                return true;
               } else {
-                // 如果没有removed，是修改的
-                arr.splice(index, 1, list[i]);
+                return false;
               }
-              return true;
-            } else {
-              return false;
+            });
+            // 如果没有的话，证明是新添加的数据
+            if (!target || !target.length) {
+              // arr.forEach((item, index) => {
+              //   if (item._id == list[i].father_id) {
+              //     arr.insert(index + 1, list[i]);
+              //   }
+              // });
+              arr.push(list[i]);
             }
-          });
-          // 如果没有的话，证明是新添加的数据
-          if (!target || !target.length) {
-            // arr.forEach((item, index) => {
-            //   if (item._id == list[i].father_id) {
-            //     arr.insert(index + 1, list[i]);
-            //   }
-            // });
-            arr.push(list[i]);
           }
+          for (let i = 0; i < arr.length; i++) {
+            arr[i].isShow = true;
+          }
+          finalData = arr;
+        } else {
+          console.log("请注意数据长度为0");
+          finalData = [];
         }
-        for (let i = 0; i < arr.length; i++) {
-          arr[i].isShow = true;
-        }
-        finalData = arr;
       } else {
         console.log("tasklistv2数据覆盖");
         for (let i = 0; i < list.length; i++) {
@@ -779,9 +783,29 @@ export default {
 
     // 滚动事件，调用更新位置
     handleScroll() {
+      // var self = this;
+      // if (self.lastInput) {
+      //   var tar = document.getElementById("c" + self.lastInput + "_input");
+      //   var all = document.getElementsByClassName("title");
+      //   if (tar && tar.blur) {
+      //     tar.blur();
+      //   }
+      // }
       // 滚动的时候执行列表更新事件
       var scrollTop = event.target.scrollTop || 0;
       this.updateVisibleData(scrollTop);
+      // Vue.nextTick(function() {
+      //   setTimeout(function() {
+      //     if (self.lastInput) {
+      //       var tar = document.getElementById("c" + self.lastInput + "_input");
+      //       var all = document.getElementsByClassName("title");
+      //       console.log(tar && tar.focus);
+      //       if (tar && tar.focus) {
+      //         tar.focus();
+      //       }
+      //     }
+      //   }, 200);
+      // });
     },
     // 更新列表和计算位置
     updateVisibleData(scrollTop) {
@@ -1026,18 +1050,18 @@ export default {
     // 选中触发事件
     selectThis(item) {
       var self = this;
-      if(self.lastInput){
-        var tar=document.getElementById("c" + self.lastInput + "_input");
-        tar&&tar.blur?tar.blur():null;
+      if (self.lastInput) {
+        var tar = document.getElementById("c" + self.lastInput + "_input");
+        tar && tar.blur ? tar.blur() : null;
       }
       this.selectItem = item;
       self.lastInput = item._id;
       // var targetInput = document.querySelector("#c" + item._id + "_input");
       Vue.nextTick(function() {
-        setTimeout(function(){
+        setTimeout(function() {
           var targetInput = document.getElementById("c" + item._id + "_input");
-          targetInput&&targetInput.focus?targetInput.focus():null;
-        },200)
+          targetInput && targetInput.focus ? targetInput.focus() : null;
+        }, 200);
       });
       this.$emit("select-item_" + self.mainid, this.mergedData, item);
     },

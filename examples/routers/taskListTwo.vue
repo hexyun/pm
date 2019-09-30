@@ -113,12 +113,12 @@ export default {
     },
     // v2
     changeTasksss(){
-      this.timeStamp = 0;
+      this.timeStamp = 123;
       this.task = list2;
     },
     changeTask() {
       this.timeStamp = 123;
-      this.task = list2;
+      this.task = [];
     },
     selectId() {
       this.$refs.listtwo.selectId("5d53eabd7b846b3ff53dbe69");
